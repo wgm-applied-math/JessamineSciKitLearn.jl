@@ -1,9 +1,18 @@
 name = "JessamineSciKitLearn"
 uuid = "b1d08412-962e-4858-8b05-b07944b12f63"
-authors = ["W. Garrett Mitchener <garrett.mitchener@gmail.com> and contributors"]
 version = "1.0.0-DEV"
+authors = ["W. Garrett Mitchener <garrett.mitchener@gmail.com> and contributors"]
+
+[workspace]
+projects = ["test"]
+
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+Jessamine = "2807b6de-c4a7-4d42-9dc5-a90bb38e3ffd"
+JessamineSymbolics = "d293f0e1-bc3b-41ab-aeda-c552fb2511c4"
 
 [compat]
+ArgParse = "1.2.0"
 julia = "1.12"
 
 [extras]
