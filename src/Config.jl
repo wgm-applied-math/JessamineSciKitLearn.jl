@@ -32,18 +32,17 @@ function get_or_build_op_inventory(op_inventory_spec)
             op_inventory_lookup = get_op_inventory(op_subspecs[1])
             if op_inventory_lookup.found
                 return op_inventory_lookup.inventory
-            else
-                op_inventory_build = build_op_inventory(op_subspecs)
-                if !isempty(op_inventory_build.unknown)
-                    @warn "get_or_build_op_inventory: Ignoring unrecognized operation inventory specs: $(join(op_inventory_build.unknown))"
-                end
-                if isempty(op_inventory_build.inventory)
-                    @warn "get_or_build_op_inventory: No operations specified, using default polynomial inventory"
-                    return get_op_inventory("Polynomial")
-                end
-                return op_inventory_build.inventory
             end
         end
+        op_inventory_build = build_op_inventory(op_subspecs)
+        if !isempty(op_inventory_build.unknown)
+            @warn "get_or_build_op_inventory: Ignoring unrecognized operation inventory specs: $(join(op_inventory_build.unknown))"
+        end
+        if isempty(op_inventory_build.inventory)
+            @warn "get_or_build_op_inventory: No operations specified, using default polynomial inventory"
+            return get_op_inventory("Polynomial")
+        end
+        return op_inventory_build.inventory
     end
 end
 
