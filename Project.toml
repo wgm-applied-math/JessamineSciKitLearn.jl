@@ -10,9 +10,11 @@ projects = ["test"]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 Jessamine = "2807b6de-c4a7-4d42-9dc5-a90bb38e3ffd"
 JessamineSymbolics = "d293f0e1-bc3b-41ab-aeda-c552fb2511c4"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
 ArgParse = "1.2.0"
+YAML = "0.4.16"
 julia = "1.12"
 
 [extras]
