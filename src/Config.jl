@@ -1,5 +1,17 @@
 using Jessamine
 
+@kwdef struct ExploreSimplifyRunSpec{Message}
+    genome_spec::GenomeSpec
+    exploration_spec::EvolutionSpec
+    exploration_generations::Int64
+    simplification_spec::Union{EvolutionSpec,Nothing}
+    simplification_generations::Int64
+    deadline::Union{Dates.DateTime,Nothing}
+    num_islands::Int64
+    discoveries::Channel{Message}
+end
+
+
 """
     @cfield spec key default_value
 
@@ -21,17 +33,11 @@ macro cfield(spec, key, default_value)
     )
 end
 
-function parse_problem_spec(input_size, s)
+function parse_run_spec(s, input_size, grow_and_rate)
     # Regularization parameters
     @cfield s lambda_b lambda_b 1e-10
     @cfield s lambda_p 1e-10
     @cfield s lambda_operand 1e-10
-
-    # Operator inventory
-    op_inv_spec = get(s, "op_inventory", "")
-    op_inventory = get_or_build_op_inventory(op_inv_spec)
-
-    # Epoch specs
 end
 
 function parse_genome_spec(s)
@@ -43,7 +49,6 @@ function parse_genome_spec(s)
         @cfield s genome_time_steps 4,
     )
 end
-
 
 function get_or_build_op_inventory(op_inventory_spec)
     op_subspecs = split_symbols(op_inventory_spec)
@@ -68,8 +73,17 @@ function get_or_build_op_inventory(op_inventory_spec)
     end
 end
 
+"""
+    split_symbols(s)
+
+Given a string, pull out the sequences of characters that are not
+whitespace, a comma, a bracket, a brace, or a quotation mark.
+Return themn as an array.  This effectively splits a string of
+space- or comma-delimited symbols (identifiers), with our without quotation
+marks, into just the symbols.
+"""
 function split_symbols(s)
-    [m.match for m in eachmatch(r"""[^][,'"[:space:]]+""", s)]
+    [m.match for m in eachmatch(r"""[^][{},'"[:space:]]+""", s)]
 end
 
 function parse_mutation_spec(s, op_inventory)
@@ -96,16 +110,37 @@ function parse_selection_spec(s)
     )
 end
 
-
-function parse_epoch_spec(s, op_inventory)
-
-    # This has to be a named tuple because
-    # EvolutionSpec requires a fitness function.
+# Not sure this is needed:
+function parse_evolution_spec(s, op_inventory, grow_and_rate)
     g_spec = parse_genome_spec(s)
     m_spec = parse_mutation_spec(s, op_inventory)
     s_spec = parse_selection_spec(s)
+    @cfield s max_generations 10
+    EvolutionSpec(g_spec, m_spec, s_spec, grow_and_rate,
+                  max_generations)
 end
 
+# Not sure if this is needed:
+function parse_epoch_spec(s, op_inventory)
+    EpochSpec(
+        ;
+        @cfield s p_mutate_op 0.15,
+        @cfield s p_mutate_index 0.15,
+        @cfield s p_duplicate_index 0.015,
+        @cfield s p_delete_index 0.015,
+        @cfield s p_duplicate_instruction 0.003,
+        @cfield s p_delete_instruction 0.003,
+        @cfield s p_hop_instruction 0.015,
+        op_inventory,
+        op_probabilities = nothing,
+        @cfield s num_to_keep 25,
+        @cfield s num_to_generate 75,
+        @cfield s p_take_better 0.65,
+        @cfield s p_take_very_best 0.25,
+        @cfield s max_generations 10,
+        @cfield s stop_on_innovation false,
+    )
+end
 
 function f(;kwargs...)
     print(kwargs)
