@@ -24,6 +24,7 @@ The search continues until the deadline.
     simplification_spec::Union{EvolutionSpec,Nothing}
     simplification_generations::Int64
     num_islands::Int64
+    stop_threshold::Union{Float64,Nothing}
     stop_deadline::Union{Dates.DateTime,Nothing}
     stop_channel::Channel{Any}
     discovery_channel::Channel{Message}
