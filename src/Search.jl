@@ -7,6 +7,7 @@ using Jessamine
 include("Config.jl")
 
 function run_island(
+    finished_channel::Channel,
     spec::ExploreSimplifySearchSpec,
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real}
@@ -44,7 +45,7 @@ function run_island(
         max_generations = spec.simplification_generations,
         discovery_channel = spec.discovery_channel)
     @debug "run_island: End simplification stage"
-    return pop_after_simplify
+    put!(finished_channel, pop_after_simplify)
 end
 
 
@@ -70,6 +71,41 @@ function run_many_islands(
         end
     end
 
+    filtered_channel = Channel()
+    new_spec = @set spec.discovery_channel = filtered_channel
+    Tasks.@spawn filter_discoveries(spec.discovery_channel, new_spec.discovery_channel)
 
+    condition = nothing
+    island_progress = Channel()
 
+    function launch_island()
+        Tasks.@spawn run_island(
+            island_progress,
+            new_spec,
+            X,
+            y;
+            rng)
+    end
+
+    # Launch a bunch of islands
+    for j in 1:new_spec.num_islands
+        launch_island()
+    end
+
+    while true
+        # Maybe stop
+        if !isnothing(new_spec.stop_channel) && isready(new_spec.stop_channel) && take!(new_spec.stop_channel)
+            condition = ReceivedStopMessage()
+            break
+        end
+        if !isnothing(new_spec.stop_deadline) && now() > new_spec.stop_deadline
+            condition = ReachedDeadline()
+            break
+        end
+
+        # When one island finishes, launch another
+        result = take!(island_progress)
+        launch_island()
+    end
+    return condition
 end
