@@ -8,12 +8,14 @@ projects = ["test"]
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Jessamine = "2807b6de-c4a7-4d42-9dc5-a90bb38e3ffd"
 JessamineSymbolics = "d293f0e1-bc3b-41ab-aeda-c552fb2511c4"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
 ArgParse = "1.2.0"
+Distributions = "0.25.123"
 YAML = "0.4.16"
 julia = "1.12"
 
