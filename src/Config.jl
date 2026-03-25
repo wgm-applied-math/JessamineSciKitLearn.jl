@@ -1,14 +1,32 @@
+"""
+Configuration files for running jobs.
+"""
+
 using Jessamine
 
-@kwdef struct ExploreSimplifyRunSpec{Message}
+"""
+    ExploreSimplifySearchSpec{Message}
+
+Specifies a search process in which the exploration
+`EvolutionSpec` is followed to form the initial population and to
+run the bulk of the evolutionary search.  Then a simplification
+`EvolutionSpec` is used if given.  The number of generations for
+each of those phases is specified.  Islands are run
+independently, up to `num_islands` at a time.  When one finishes,
+another one is started.  When an agent with a new best rating is
+found, it's sent to the `discoveries` channel.
+The search continues until the deadline.
+"""
+@kwdef struct ExploreSimplifySearchSpec{Message}
     genome_spec::GenomeSpec
     exploration_spec::EvolutionSpec
     exploration_generations::Int64
     simplification_spec::Union{EvolutionSpec,Nothing}
     simplification_generations::Int64
-    deadline::Union{Dates.DateTime,Nothing}
     num_islands::Int64
-    discoveries::Channel{Message}
+    stop_deadline::Union{Dates.DateTime,Nothing}
+    stop_channel::Channel{Any}
+    discovery_channel::Channel{Message}
 end
 
 
