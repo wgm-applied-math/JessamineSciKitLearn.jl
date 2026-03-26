@@ -107,3 +107,7 @@ function run_many_islands(
     end
     return condition
 end
+
+# set up the grow&rate function on the data
+# build the configuration
+# launch
