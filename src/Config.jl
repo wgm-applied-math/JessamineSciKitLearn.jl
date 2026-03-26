@@ -26,7 +26,6 @@ The search continues until the deadline.
     num_islands::Int64
     stop_threshold::Union{Float64,Nothing}
     stop_deadline::Union{Dates.DateTime,Nothing}
-    stop_channel::Channel{Any}
     discovery_channel::Channel{Message}
 end
 

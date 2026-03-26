@@ -30,7 +30,6 @@ function run_island(
         spec.exploration_spec,
         pop_init,
         stop_deadline = spec.stop_deadline,
-        stop_channel = spec.stop_channel,
         max_generations = spec.exploration_generations,
         discovery_channel = spec.discovery_channel)
     @debug "run_island: End exploration stage"
@@ -41,7 +40,6 @@ function run_island(
         pop_after_explore,
         stop_threshold = spec.stop_threshold,
         stop_deadline = spec.stop_deadline,
-        stop_channel = spec.stop_channel,
         max_generations = spec.simplification_generations,
         discovery_channel = spec.discovery_channel)
     @debug "run_island: End simplification stage"
