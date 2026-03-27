@@ -6,11 +6,13 @@ using Jessamine
 
 include("Config.jl")
 
+struct ExploreSimplifySearchJob
+    spec::ExploreSimplifySearchSpec
+    discovery_channel::Channel
+end
+
 function run_island(
-    finished_channel::Channel,
-    spec::ExploreSimplifySearchSpec,
-    X::AbstractMatrix{<:Real},
-    y::AbstractVector{<:Real}
+    job::ExploreSimplifySearchJob,
     ;
     rng=Random.default_rng())
 
@@ -19,7 +21,7 @@ function run_island(
     @debug "run_island: Begin random_initial_population"
     pop_init = random_initial_population(
         rng,
-        spec.exploration_spec,
+        job.spec.exploration_spec,
         arity_dist,
         spec.exploration_spec.s_spec,
         domain_safe = true)
