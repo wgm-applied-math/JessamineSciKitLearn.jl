@@ -1,14 +1,4 @@
 """
-Tools for loading configuration files for running jobs.
-"""
-
-using Dates
-
-using Jessamine
-
-include("CField.jl")
-
-"""
     EpocSpec
 
 Configuration for one evolution epoch
@@ -43,12 +33,12 @@ end
 function parse_search_spec(s=Dict(), input_size=2)
     # Regularization parameters
     @cfield s op_inventory_spec "Polynomial"
-    genome_spec_override = get(s, "genome_spec", Dict())
+    genome_spec_override = get(s, "genome", Dict())
     genome_spec = parse_genome_spec(genome_spec_override)
     op_inventory = get_or_build_op_inventory(op_inventory_spec)
-    exploration_spec_override = get(s, "exploration_spec", Dict())
+    exploration_spec_override = get(s, "exploration", Dict())
     exploration_spec = parse_epoch_spec(exploration_spec_override)
-    simplification_spec_override = get(s, "simplification_spec", nothing)
+    simplification_spec_override = get(s, "simplification", nothing)
     if isnothing(simplification_spec_override)
         simplification_spec = nothing
     else
@@ -79,6 +69,8 @@ end
 
 
 function parse_epoch_spec(s=Dict())
+    # Pull mutation and selection paramters from the same dictionary.
+    # I'm not putting in separate selection and mutation subsections.
     m_spec = parse_mutation_spec(s)
     s_spec = parse_selection_spec(s)
     @cfield s max_generations 10

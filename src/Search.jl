@@ -1,13 +1,6 @@
-using Accessors
-using Distributions
-using Random
-
-using Jessamine
-
-include("Config.jl")
-
 struct ExploreSimplifySearchJob
     spec::ExploreSimplifySearchSpec
+    grow_and_rate::Any
     discovery_channel::Channel
 end
 
@@ -18,13 +11,20 @@ function run_island(
 
     arity_dist = DiscreteNonParametric([1, 2, 3], [0.25, 0.5, 0.25])
 
+    explore_evolution_spec = Evolution_Spec(
+        job.spec.genome_spec,
+        job.spec.exploration_spec.m_spec,
+        job.spec.exploration_spec.s_spec,
+        job.grow_and_rate,
+        job.spec.exploration_spec.max_generations,
+    )
     @debug "run_island: Begin random_initial_population"
     pop_init = random_initial_population(
         rng,
-        job.spec.exploration_spec,
+        explore_evolution_spec,
         arity_dist,
-        spec.exploration_spec.s_spec,
-        domain_safe = true)
+        domain_safe = true,
+    )
     @debug "run_island: End random_initial_population"
     @debug "run_island: Begin exploration stage"
     pop_after_explore = evolution_loop(
@@ -35,24 +35,37 @@ function run_island(
         max_generations = spec.exploration_generations,
         discovery_channel = spec.discovery_channel)
     @debug "run_island: End exploration stage"
-    @debug "run_island: Begin simplification stage"
-    pop_after_simplify = evolution_loop(
-        rng,
-        spec.exploration_spec,
-        pop_after_explore,
-        stop_threshold = spec.stop_threshold,
-        stop_deadline = spec.stop_deadline,
-        max_generations = spec.simplification_generations,
-        discovery_channel = spec.discovery_channel)
-    @debug "run_island: End simplification stage"
-    put!(finished_channel, pop_after_simplify)
+    if isnothing(job.spec.simplification_spec)
+        @debug "run_island: No simplification stage specified"
+        put!(finished_channel, pop_after_explore)
+    else
+        simplification_evolution_spec = EvolutionSpec(
+            job.spec.genome_spec,
+            job.spec.simplification_spec.m_spec,
+            job.spec.simplification_spec.s_spec,
+            job.grow_and_rate,
+            job.spec.simplification_spec.max_generations,
+        )
+
+        @debug "run_island: Begin simplification stage"
+        pop_after_simplify = evolution_loop(
+            rng,
+            spec.exploration_spec,
+            pop_after_explore,
+            stop_threshold = spec.stop_threshold,
+            stop_deadline = spec.stop_deadline,
+            max_generations = spec.simplification_generations,
+            discovery_channel = spec.discovery_channel)
+        @debug "run_island: End simplification stage"
+        put!(finished_channel, pop_after_simplify)
+    end
 end
 
 
 function run_many_islands(
     spec::ExploreSimplifySearchSpec,
-    X::AbstractMatrix{<:Real},
-    y::AbstractVector{<:Real}
+    grow_and_rate,
+    discovery_channel::Channel
     ;
     rng=Random.default_rng())
 
@@ -71,20 +84,16 @@ function run_many_islands(
         end
     end
 
-    filtered_channel = Channel()
-    new_spec = @set spec.discovery_channel = filtered_channel
-    Tasks.@spawn filter_discoveries(spec.discovery_channel, new_spec.discovery_channel)
-
-    condition = nothing
-    island_progress = Channel()
+    unfiltered_channel = Channel()
+    Threads.@spawn filter_discoveries(unfiltered_channel, discovery_channel)
 
     function launch_island()
-        Tasks.@spawn run_island(
-            island_progress,
-            new_spec,
-            X,
-            y;
-            rng)
+        job = ExploreSimplifySearchJob(
+            spec,
+            grow_and_rate,
+            unfiltered_channel
+        )
+        Threads.@spawn run_island(job; rng)
     end
 
     # Launch a bunch of islands
@@ -92,6 +101,9 @@ function run_many_islands(
         launch_island()
     end
 
+    island_progress = Channel()
+
+    condition = nothing
     while true
         # Maybe stop
         if !isnothing(new_spec.stop_channel) && isready(new_spec.stop_channel) && take!(new_spec.stop_channel)
@@ -109,7 +121,3 @@ function run_many_islands(
     end
     return condition
 end
-
-# set up the grow&rate function on the data
-# build the configuration
-# launch
