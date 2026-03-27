@@ -24,7 +24,6 @@ run the bulk of the evolutionary search.  Then a simplification
     lambda_op::Float64
     num_islands::Int64
     stop_threshold::Union{Float64,Nothing}
-    stop_deadline::Union{Dates.DateTime,Nothing}
     exploration_spec::EpochSpec
     simplification_spec::Union{EpochSpec,Nothing}
 end
@@ -59,9 +58,6 @@ function parse_search_spec(s=Dict(), input_size=2)
         ,
         @cfield s stop_threshold nothing
         ,
-        @cfield s stop_deadline nothing
-        ,
-
     )
 end
 

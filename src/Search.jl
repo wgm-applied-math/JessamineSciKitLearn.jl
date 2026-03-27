@@ -1,14 +1,15 @@
 struct ExploreSimplifySearchJob
     spec::ExploreSimplifySearchSpec
     grow_and_rate::Any
-    discovery_channel::Channel
+    discovery_channel::Channel{Agent}
 end
 
 function run_island(
     job::ExploreSimplifySearchJob,
-    finished_channel::Channel
+    finished_channel::Channel{Population},
     ;
-    rng=Random.default_rng())
+    stop_deadline::Union{DateTime,Nothing} = nothing,
+    rng = Random.default_rng())
     @debug "run_island: Top"
 
     spec = job.spec
@@ -34,7 +35,7 @@ function run_island(
         rng,
         explore_evolution_spec,
         pop_init,
-        stop_deadline = spec.stop_deadline,
+        stop_deadline = stop_deadline,
         discovery_channel = job.discovery_channel)
     @debug "run_island: End exploration stage"
     if isnothing(job.spec.simplification_spec)
@@ -55,7 +56,7 @@ function run_island(
             simplification_evolution_spec,
             pop_after_explore,
             stop_threshold = spec.stop_threshold,
-            stop_deadline = spec.stop_deadline,
+            stop_deadline = stop_deadline,
             discovery_channel = job.discovery_channel)
         @debug "run_island: End simplification stage"
         put!(finished_channel, pop_after_simplify)
@@ -66,8 +67,9 @@ end
 function run_many_islands(
         spec::ExploreSimplifySearchSpec,
         grow_and_rate,
-        discovery_channel::Channel
+        discovery_channel::Channel{Agent},
         ;
+        stop_deadline::Union{DateTime,Nothing} = nothing,
         rng = Random.default_rng())
 
     best_rating = nothing
@@ -75,7 +77,7 @@ function run_many_islands(
     function filter_discoveries(c_get, c_put)
         for a in c_get
             @debug "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
-            if !isnothing(best_rating) && is_better(best_rating, a.rating)
+            if isnothing(best_rating) || a.rating < best_rating
                 best_rating = a.rating
                 @debug "run_regression_many_islands/filter_discoveries: New best rating $best_rating"
                 put!(c_put, a)
@@ -85,7 +87,7 @@ function run_many_islands(
         end
     end
 
-    unfiltered_channel = Channel(2*spec.num_islands)
+    unfiltered_channel = Channel{Agent}(2*spec.num_islands)
     Threads.@spawn begin
         try
             filter_discoveries(unfiltered_channel, discovery_channel)
@@ -93,7 +95,7 @@ function run_many_islands(
                 @error "run_many_islands: Exception during ./filter_discoveries" exception=(err, catch_backtrace())
             end
     end
-    finished_channel = Channel(2*spec.num_islands)
+    finished_channel = Channel{Population}(2*spec.num_islands)
 
     function launch_island()
         job = ExploreSimplifySearchJob(
@@ -104,7 +106,7 @@ function run_many_islands(
         @debug "run_many_islands/launch_island: Launching island"
         Threads.@spawn begin
             try
-                run_island(job, finished_channel; rng)
+                run_island(job, finished_channel; stop_deadline, rng)
             catch err
                 @error "run_many_islands: Exception during run_island" exception=(err, catch_backtrace())
             end
@@ -123,7 +125,7 @@ function run_many_islands(
         #     condition = ReceivedStopMessage()
         #     break
         # end
-        if !isnothing(spec.stop_deadline) && now() > spec.stop_deadline
+        if !isnothing(stop_deadline) && now() > stop_deadline
             condition = ReachedDeadline()
             break
         end
