@@ -13,7 +13,7 @@ function run_island(
 
     arity_dist = DiscreteNonParametric([1, 2, 3], [0.25, 0.5, 0.25])
 
-    explore_evolution_spec = Evolution_Spec(
+    explore_evolution_spec = EvolutionSpec(
         job.spec.genome_spec,
         job.spec.exploration_spec.m_spec,
         job.spec.exploration_spec.s_spec,
