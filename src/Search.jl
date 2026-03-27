@@ -11,14 +11,15 @@ function run_island(
     rng=Random.default_rng())
     @debug "run_island: Top"
 
+    spec = job.spec
     arity_dist = DiscreteNonParametric([1, 2, 3], [0.25, 0.5, 0.25])
 
     explore_evolution_spec = EvolutionSpec(
-        job.spec.genome_spec,
-        job.spec.exploration_spec.m_spec,
-        job.spec.exploration_spec.s_spec,
+        spec.genome_spec,
+        spec.exploration_spec.m_spec,
+        spec.exploration_spec.s_spec,
         job.grow_and_rate,
-        job.spec.exploration_spec.max_generations,
+        spec.exploration_spec.max_generations,
     )
     @debug "run_island: Begin random_initial_population"
     pop_init = random_initial_population(
@@ -31,33 +32,31 @@ function run_island(
     @debug "run_island: Begin exploration stage"
     pop_after_explore = evolution_loop(
         rng,
-        spec.exploration_spec,
+        explore_evolution_spec,
         pop_init,
         stop_deadline = spec.stop_deadline,
-        max_generations = spec.exploration_generations,
-        discovery_channel = spec.discovery_channel)
+        discovery_channel = job.discovery_channel)
     @debug "run_island: End exploration stage"
     if isnothing(job.spec.simplification_spec)
         @debug "run_island: No simplification stage specified"
         put!(finished_channel, pop_after_explore)
     else
         simplification_evolution_spec = EvolutionSpec(
-            job.spec.genome_spec,
-            job.spec.simplification_spec.m_spec,
-            job.spec.simplification_spec.s_spec,
+            spec.genome_spec,
+            spec.simplification_spec.m_spec,
+            spec.simplification_spec.s_spec,
             job.grow_and_rate,
-            job.spec.simplification_spec.max_generations,
+            spec.simplification_spec.max_generations,
         )
 
         @debug "run_island: Begin simplification stage"
         pop_after_simplify = evolution_loop(
             rng,
-            spec.exploration_spec,
+            simplification_evolution_spec,
             pop_after_explore,
             stop_threshold = spec.stop_threshold,
             stop_deadline = spec.stop_deadline,
-            max_generations = spec.simplification_generations,
-            discovery_channel = spec.discovery_channel)
+            discovery_channel = job.discovery_channel)
         @debug "run_island: End simplification stage"
         put!(finished_channel, pop_after_simplify)
     end
@@ -87,8 +86,13 @@ function run_many_islands(
     end
 
     unfiltered_channel = Channel(2*spec.num_islands)
-    Threads.@spawn filter_discoveries(unfiltered_channel, discovery_channel)
-
+    Threads.@spawn begin
+        try
+            filter_discoveries(unfiltered_channel, discovery_channel)
+        catch err
+                @error "run_many_islands: Exception during ./filter_discoveries" exception=(err, catch_backtrace())
+            end
+    end
     finished_channel = Channel(2*spec.num_islands)
 
     function launch_island()
@@ -98,7 +102,13 @@ function run_many_islands(
             unfiltered_channel
         )
         @debug "run_many_islands/launch_island: Launching island"
-        Threads.@spawn run_island(job, finished_channel; rng)
+        Threads.@spawn begin
+            try
+                run_island(job, finished_channel; rng)
+            catch err
+                @error "run_many_islands: Exception during run_island" exception=(err, catch_backtrace())
+            end
+        end
     end
 
     # Launch a bunch of islands

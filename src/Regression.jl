@@ -19,7 +19,7 @@ function run_regression(
 
     function grow_and_rate(rng, g_spec, genome)
         return least_squares_ridge_grow_and_rate(
-            collect(eachcol(X)),
+            [collect(c) for c in eachcol(X)],
             y,
             spec.lambda_b,
             spec.lambda_p,
