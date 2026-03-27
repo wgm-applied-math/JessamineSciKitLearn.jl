@@ -6,8 +6,10 @@ end
 
 function run_island(
     job::ExploreSimplifySearchJob,
+    finished_channel::Channel
     ;
     rng=Random.default_rng())
+    @debug "run_island: Top"
 
     arity_dist = DiscreteNonParametric([1, 2, 3], [0.25, 0.5, 0.25])
 
@@ -63,11 +65,11 @@ end
 
 
 function run_many_islands(
-    spec::ExploreSimplifySearchSpec,
-    grow_and_rate,
-    discovery_channel::Channel
-    ;
-    rng=Random.default_rng())
+        spec::ExploreSimplifySearchSpec,
+        grow_and_rate,
+        discovery_channel::Channel
+        ;
+        rng = Random.default_rng())
 
     best_rating = nothing
 
@@ -84,8 +86,10 @@ function run_many_islands(
         end
     end
 
-    unfiltered_channel = Channel()
+    unfiltered_channel = Channel(2*spec.num_islands)
     Threads.@spawn filter_discoveries(unfiltered_channel, discovery_channel)
+
+    finished_channel = Channel(2*spec.num_islands)
 
     function launch_island()
         job = ExploreSimplifySearchJob(
@@ -93,30 +97,31 @@ function run_many_islands(
             grow_and_rate,
             unfiltered_channel
         )
-        Threads.@spawn run_island(job; rng)
+        @debug "run_many_islands/launch_island: Launching island"
+        Threads.@spawn run_island(job, finished_channel; rng)
     end
 
     # Launch a bunch of islands
-    for j in 1:new_spec.num_islands
+    for j in 1:spec.num_islands
         launch_island()
     end
 
-    island_progress = Channel()
-
     condition = nothing
     while true
-        # Maybe stop
-        if !isnothing(new_spec.stop_channel) && isready(new_spec.stop_channel) && take!(new_spec.stop_channel)
-            condition = ReceivedStopMessage()
-            break
-        end
-        if !isnothing(new_spec.stop_deadline) && now() > new_spec.stop_deadline
+        # Maybe stop: TODO Each island needs its own stop channel
+        # if !isnothing(spec.stop_channel) && isready(spec.stop_channel) && take!(spec.stop_channel)
+        #     condition = ReceivedStopMessage()
+        #     break
+        # end
+        if !isnothing(spec.stop_deadline) && now() > spec.stop_deadline
             condition = ReachedDeadline()
             break
         end
 
+        @debug "run_many_islands: Waiting for island to finish"
         # When one island finishes, launch another
-        result = take!(island_progress)
+        result = take!(finished_channel)
+        @debug "run_many_islands: Island finished; launching another"
         launch_island()
     end
     return condition

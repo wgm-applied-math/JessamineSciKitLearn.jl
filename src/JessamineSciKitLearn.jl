@@ -12,6 +12,7 @@ using JessamineSymbolics
 include("CField.jl")
 include("Config.jl")
 include("Search.jl")
+include("Regression.jl")
 
 
 end

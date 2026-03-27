@@ -1,11 +1,14 @@
+export regression_main
+
 
 function run_regression(
     spec::ExploreSimplifySearchSpec,
     X::AbstractMatrix{<:Real},
-    y::AbstractVector{<:Real},
+    y::AbstractVector{<:Real};
+    rng=Random.default_rng()
     )
 
-    discovery_channel = Channel()
+    discovery_channel = Channel(2*spec.num_islands)
     best_so_far = nothing
     Threads.@spawn begin
         for a in discovery_channel
@@ -40,9 +43,10 @@ end
 
 
 function regression_main(
-    spec_source::Dict,
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real},
+    spec_source::Dict = Dict();
+    rng=Random.default_rng()
     )
     input_size = size(X)[2]
     spec = parse_search_spec(spec_source, input_size)
