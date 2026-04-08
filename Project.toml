@@ -1,6 +1,6 @@
 name = "JessamineSciKitLearn"
 uuid = "b1d08412-962e-4858-8b05-b07944b12f63"
-version = "1.0.0-DEV"
+version = "0.2.0"
 authors = ["W. Garrett Mitchener <garrett.mitchener@gmail.com> and contributors"]
 
 [workspace]
