@@ -92,7 +92,8 @@ function run_many_islands(
         try
             filter_discoveries(unfiltered_channel, discovery_channel)
         catch err
-                @error "run_many_islands: Exception during ./filter_discoveries" exception=(err, catch_backtrace())
+            @error "run_many_islands: Exception during ./filter_discoveries" exception=(err, catch_backtrace())
+            rethrow()
         end
     end
     finished_channel = Channel{Population}(2*spec.num_islands)
@@ -109,6 +110,7 @@ function run_many_islands(
                 run_island(job, finished_channel; stop_deadline, rng)
             catch err
                 @error "run_many_islands: Exception during run_island" exception=(err, catch_backtrace())
+                rethrow()
             end
         end
     end
