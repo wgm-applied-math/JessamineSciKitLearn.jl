@@ -50,7 +50,8 @@ function regression_main(
     rng = Random.default_rng()
     )
     default_deadline = now() + Dates.Second(30)
-    stop_deadline = get(spec_source, "stop_deadline", default_deadline)
+    stop_deadline = get_or_parse(spec_source, "stop_deadline", default_deadline)
+    @info "regression_main: stop_deadline = $stop_deadline"
     n_points, input_size = size(X)
     @assert n_points == length(y)
     spec = parse_search_spec(spec_source, input_size)
