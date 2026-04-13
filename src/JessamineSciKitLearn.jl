@@ -6,6 +6,8 @@ using Accessors
 using Distributions
 using Random
 
+using PythonCall
+
 using Jessamine
 using JessamineSymbolics
 
