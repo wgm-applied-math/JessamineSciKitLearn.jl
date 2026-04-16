@@ -136,7 +136,7 @@ function careful_string(io, expr::Num; depth=0)
     careful_string(io, v, depth=depth)
 end
 
-function careful_string(io, expr::BasicSymbolic; depth=0)
+function careful_string(io, expr::SymbolicUtils.BasicSymbolic; depth=0)
     if SymbolicUtils.issym(expr)
         raw = string(expr)
         fixed = replace_subscripts(raw)
