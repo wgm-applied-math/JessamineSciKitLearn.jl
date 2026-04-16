@@ -1,13 +1,3 @@
-module CarefulString
-
-using Symbolics: BasicSymbolic
-using Symbolics
-using SymbolicUtils
-using TermInterface
-using Printf
-
-using Base.Ryu
-
 function dump_tree(expr, depth=0)
     indent = " "^depth
     etype = typeof(expr)
@@ -181,6 +171,4 @@ const SUBSCRIPTS = [
 
 function replace_subscripts(s)
     replace(s, SUBSCRIPTS...)
-end
-
 end
