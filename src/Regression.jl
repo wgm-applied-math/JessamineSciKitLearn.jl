@@ -37,18 +37,15 @@ function run_regression(
 end
 
 
-function agent_to_symbolic(g_spec, a)
-    sym_res = model_basic_symbolic_output(g_spec, a)
-    return sym_res.y_num
-end
-
-
 function regression_main(
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real},
-    spec_source::AbstractDict = Dict();
-    rng = Random.default_rng()
+    spec_source::AbstractDict = Dict()
     )
+    @debug "regression_main: spec_source = $spec_source"
+    rng = Random.default_rng()
+    @cfield spec_source rng_seed 0xFEDCBA09876543210
+    Random.seed!(rng, rng_seed)
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(spec_source, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
@@ -58,6 +55,6 @@ function regression_main(
     @debug "regression_main: Search spec: $spec"
     @debug "regression_main: Stop deadline: $stop_deadline"
     best_agent = run_regression(spec, X, y; stop_deadline)
-    symbolic_form = agent_to_symbolic(spec.genome_spec, best_agent)
-    return string(symbolic_form)
+    sym_res = model_basic_symbolic_output(spec.genome_spec, best_agent)
+    return to_careful_string(sym_res.y_num)
 end
