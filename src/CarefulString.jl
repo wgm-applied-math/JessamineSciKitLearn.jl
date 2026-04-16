@@ -98,6 +98,26 @@ function careful_string(io, p::typeof(//); depth=0)
     print(io, "/")
 end
 
+# For sympy
+function careful_string(io, p::typeof(abs); depth=0)
+    print(io, "Abs")
+end
+
+# For sympy
+function careful_string(io, p::typeof(mod); depth=0)
+    print(io, "Mod")
+end
+
+# For sympy
+function careful_string(io, p::typeof(min); depth=0)
+    print(io, "Min")
+end
+
+# For sympy
+function careful_string(io, p::typeof(max); depth=0)
+    print(io, "Max")
+end
+
 
 function careful_string(io, x::Real; depth=0)
     basic = Ryu.writeshortest(Float64(x))
