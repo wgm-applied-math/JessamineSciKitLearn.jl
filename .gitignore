@@ -1,6 +1,9 @@
 # Emacs auto-save files
 *~
 
+# Conda stuff
+.CondaPkg
+
 # Jupyter stuff
 .ipynb_checkpoints
 
