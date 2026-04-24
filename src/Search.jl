@@ -76,7 +76,7 @@ function run_many_islands(
 
     function filter_discoveries(c_get, c_put)
         for a in c_get
-            @debug "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
+            @info "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
             if isnothing(best_rating) || a.rating < best_rating
                 best_rating = a.rating
                 @debug "run_regression_many_islands/filter_discoveries: New best rating $best_rating"
