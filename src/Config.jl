@@ -29,19 +29,23 @@ run the bulk of the evolutionary search.  Then a simplification
 end
 
 
-function parse_search_spec(s=Dict(), input_size=2)
-    # Regularization parameters
-    @cfield s op_inventory_spec "Polynomial"
-    genome_spec_override = get(s, "genome", Dict())
+function parse_search_spec(s::AbstractDict=Dict(), input_size=2)
+    @debug "parse_search_spec: s: $s"
+    op_inventory_actual = begin
+        @cfield s op_inventory "Polynomial"
+        get_or_build_op_inventory(op_inventory)
+    end
+    @debug "parse_search_spec: op_inventory_actual: $op_inventory_actual"
+    genome_spec_override = get_or_parse(s, "genome", Dict())
     genome_spec = parse_genome_spec(genome_spec_override)
-    op_inventory = get_or_build_op_inventory(op_inventory_spec)
-    exploration_spec_override = get(s, "exploration", Dict())
-    exploration_spec = parse_epoch_spec(exploration_spec_override)
-    simplification_spec_override = get(s, "simplification", nothing)
+    exploration_spec_override = get_or_parse(s, "exploration", Dict())
+    @assert !isnothing(exploration_spec_override)
+    exploration_spec = parse_epoch_spec(op_inventory_actual, exploration_spec_override)
+    simplification_spec_override = get_or_parse(s, "simplification", nothing)
     if isnothing(simplification_spec_override)
         simplification_spec = nothing
     else
-        simplification_spec = parse_epoch_spec(simplification_spec_override)
+        simplification_spec = parse_epoch_spec(op_inventory_actual, simplification_spec_override)
     end
     ExploreSimplifySearchSpec(
         ;
@@ -62,18 +66,16 @@ function parse_search_spec(s=Dict(), input_size=2)
 end
 
 
-
-
-function parse_epoch_spec(s=Dict())
+function parse_epoch_spec(op_inventory, s::AbstractDict=Dict())
     # Pull mutation and selection paramters from the same dictionary.
     # I'm not putting in separate selection and mutation subsections.
-    m_spec = parse_mutation_spec(s)
+    m_spec = parse_mutation_spec(op_inventory, s)
     s_spec = parse_selection_spec(s)
     @cfield s max_generations 10
     EpochSpec(; m_spec, s_spec, max_generations)
 end
 
-function parse_genome_spec(s=Dict(), input_size=2)
+function parse_genome_spec(s::AbstractDict=Dict(), input_size=2)
     @cfield s output_size 4
     @cfield s scratch_size 2
     @cfield s parameter_size 3
@@ -123,7 +125,7 @@ function split_symbols(s)
     [m.match for m in eachmatch(r"""[^][{},'"[:space:]]+""", s)]
 end
 
-function parse_mutation_spec(s = Dict(), op_inventory=get_or_build_op_inventory())
+function parse_mutation_spec(op_inventory, s::AbstractDict = Dict())
     MutationSpec(
         ;
         op_inventory,
@@ -143,7 +145,7 @@ function parse_mutation_spec(s = Dict(), op_inventory=get_or_build_op_inventory(
     )
 end
 
-function parse_selection_spec(s=Dict())
+function parse_selection_spec(s::AbstractDict = Dict())
     SelectionSpec(
         ;
         @cfield s num_to_keep 25
