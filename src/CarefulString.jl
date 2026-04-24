@@ -46,7 +46,7 @@ function careful_string(io, expr; depth=0)
     end
 end
 
-const BinOp = Union{typeof(+),typeof(-),typeof(*),typeof(^)}
+const BinOp = Union{typeof(+),typeof(-),typeof(*),typeof(/),typeof(//),typeof(^)}
 
 function careful_string(io, op::BinOp, args; depth=0)
     @assert length(args) > 0
