@@ -34,10 +34,10 @@ function run_regression(
             genome)
     end
 
-    @debug "run_regression: Launching island jobs"
+    @info "run_regression: Launching island jobs"
     run_many_islands(spec, grow_and_rate, discovery_channel; stop_deadline, rng)
 
-    @debug "run_regression: Islands ended"
+    @info "run_regression: Islands ended, best rating: $(best_so_far.rating)"
     return best_so_far
 end
 
@@ -47,7 +47,7 @@ function regression_main(
     y::AbstractVector{<:Real},
     spec_source::AbstractDict = Dict()
     )
-    @debug "regression_main: spec_source = $spec_source"
+    @info "regression_main: spec_source = $spec_source"
     rng = Random.default_rng()
     @cfield spec_source rng_seed 0xFEDCBA09876543210
     Random.seed!(rng, rng_seed)
@@ -57,9 +57,12 @@ function regression_main(
     n_points, input_size = size(X)
     @assert n_points == length(y)
     spec = parse_search_spec(spec_source, input_size)
-    @debug "regression_main: Search spec: $spec"
-    @debug "regression_main: Stop deadline: $stop_deadline"
+    @info "regression_main: Search spec: $spec"
+    @info "regression_main: Stop deadline: $stop_deadline"
     best_agent = run_regression(spec, X, y; stop_deadline)
     sym_res = model_basic_symbolic_output(spec.genome_spec, best_agent)
-    return to_careful_string(sym_res.y_num)
+    @info "regression_main: Best (symbolic): $sym_res"
+    y_num_str = to_careful_string(sym_res.y_num)
+    @info "regression_main: Best (careful string): $y_num_str"
+    return y_num_str
 end
