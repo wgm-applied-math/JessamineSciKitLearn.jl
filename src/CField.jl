@@ -45,9 +45,7 @@ the value to the specified type.
 """
 function get_or_parse(spec::AbstractDict, key, default_value, etype=typeof(default_value))
     value = get(spec, key, default_value)
-    if isnothing(value)
-        return nothing
-    elseif isa(value, etype)
+    if isa(value, etype)
         return value
     elseif isa(value, AbstractString)
         # Got a string that needs to be parsed
@@ -55,6 +53,8 @@ function get_or_parse(spec::AbstractDict, key, default_value, etype=typeof(defau
         e_val = eval(p_val)
         c_val = conf_convert(etype, e_val)
         return c_val
+    elseif isnothing(value)
+        return default_value
     else
         # Got something of the wrong type
         c_val = conf_convert(etype, value)
