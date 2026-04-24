@@ -9,12 +9,17 @@ function run_regression(
     rng=Random.default_rng()
     )
 
+    @debug "run_regression: spec: $spec"
+
     discovery_channel = Channel{Agent}(2*spec.num_islands)
     best_so_far = nothing
     Threads.@spawn begin
         for a in discovery_channel
-            @debug "run_regression: New discovery with rating $(a.rating)"
-            best_so_far = a
+            @info "run_regression: New discovery with rating $(a.rating)"
+            if isnothing(best_so_far) || a.rating < best_so_far.rating
+                @info "run_regression: Keeping"
+                best_so_far = a
+            end
         end
     end
 
