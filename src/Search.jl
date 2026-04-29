@@ -6,7 +6,7 @@ end
 
 function run_island(
     job::ExploreSimplifySearchJob,
-    finished_channel::Channel{Population},
+    finished_channel::Channel{Tuple{Population,ExploreSimplifySearchJob}},
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
     rng = Random.default_rng())
@@ -38,9 +38,9 @@ function run_island(
         stop_deadline = stop_deadline,
         discovery_channel = job.discovery_channel)
     @debug "run_island: End exploration stage"
+    final_pop = pop_after_explore
     if isnothing(job.spec.simplification_spec)
         @debug "run_island: No simplification stage specified"
-        put!(finished_channel, pop_after_explore)
     else
         simplification_evolution_spec = EvolutionSpec(
             spec.genome_spec,
@@ -59,18 +59,25 @@ function run_island(
             stop_deadline = stop_deadline,
             discovery_channel = job.discovery_channel)
         @debug "run_island: End simplification stage"
-        put!(finished_channel, pop_after_simplify)
+        final_pop = pop_after_simplify
     end
+    put!(finished_channel, (final_pop, job))
 end
 
 
 function run_many_islands(
-        spec::ExploreSimplifySearchSpec,
-        grow_and_rate,
-        discovery_channel::Channel{Agent},
-        ;
-        stop_deadline::Union{DateTime,Nothing} = nothing,
-        rng = Random.default_rng())
+    prespec::AbstractDict,
+    X,
+    y,
+    discovery_channel::Channel{Agent},
+    ;
+    stop_deadline::Union{DateTime,Nothing} = nothing,
+    rng = Random.default_rng())
+
+    @info "run_many_islands: prespec = $prespec"
+
+    n_points, input_size = size(X)
+    @assert n_points == length(y)
 
     best_rating = nothing
 
@@ -87,7 +94,7 @@ function run_many_islands(
         end
     end
 
-    unfiltered_channel = Channel{Agent}(2*spec.num_islands)
+    unfiltered_channel = Channel{Agent}(100)
     Threads.@spawn begin
         try
             filter_discoveries(unfiltered_channel, discovery_channel)
@@ -96,14 +103,9 @@ function run_many_islands(
             rethrow()
         end
     end
-    finished_channel = Channel{Population}(2*spec.num_islands)
+    finished_channel = Channel{Tuple{Population,ExploreSimplifySearchJob}}(100)
 
-    function launch_island()
-        job = ExploreSimplifySearchJob(
-            spec,
-            grow_and_rate,
-            unfiltered_channel
-        )
+    function launch_island(job)
         @debug "run_many_islands/launch_island: Launching island"
         Threads.@spawn begin
             try
@@ -115,9 +117,41 @@ function run_many_islands(
         end
     end
 
+    g_spec = nothing
+
+    function launch_islands(prespec)
+        @info "run_many_islands/launch_islands: prespec = $prespec"
+        spec = parse_search_spec(prespec, input_size)
+        if isnothing(g_spec)
+            g_spec = spec.genome_spec
+        end
+
+        function grow_and_rate(rng, g_spec, genome)
+            return least_squares_ridge_grow_and_rate(
+                [collect(c) for c in eachcol(X)],
+                y,
+                spec.lambda_b,
+                spec.lambda_p,
+                spec.lambda_op,
+                g_spec,
+                genome)
+        end
+
+        job = ExploreSimplifySearchJob(
+            spec,
+            grow_and_rate,
+            unfiltered_channel
+        )
+
+        for j in 1:spec.num_islands
+            @debug "run_many_islands/launch_islands: Launching island $j"
+            launch_island(job)
+        end
+    end
+
     # Launch a bunch of islands
-    for j in 1:spec.num_islands
-        launch_island()
+    for island_spec in explode([prespec], ["op_inventory"])
+        launch_islands(island_spec)
     end
 
     condition = nothing
@@ -134,9 +168,9 @@ function run_many_islands(
 
         @debug "run_many_islands: Waiting for island to finish"
         # When one island finishes, launch another
-        result = take!(finished_channel)
+        (result, job) = take!(finished_channel)
         @debug "run_many_islands: Island finished; launching another"
-        launch_island()
+        launch_island(job)
     end
-    return condition
+    return (condition, g_spec)
 end

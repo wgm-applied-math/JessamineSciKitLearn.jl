@@ -7,6 +7,7 @@ using Distributions
 using Random
 
 using PythonCall
+using StructUtils
 using Symbolics
 using SymbolicUtils
 using TermInterface

@@ -2,16 +2,15 @@ export regression_main
 
 
 function run_regression(
-    spec::ExploreSimplifySearchSpec,
+    prespec::AbstractDict,
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real};
     stop_deadline::Union{DateTime,Nothing} = nothing,
     rng=Random.default_rng()
     )
+    @info "run_regression: prespec: $prespec"
 
-    @debug "run_regression: spec: $spec"
-
-    discovery_channel = Channel{Agent}(2*spec.num_islands)
+    discovery_channel = Channel{Agent}(100)
     best_so_far = nothing
     Threads.@spawn begin
         for a in discovery_channel
@@ -23,44 +22,33 @@ function run_regression(
         end
     end
 
-    function grow_and_rate(rng, g_spec, genome)
-        return least_squares_ridge_grow_and_rate(
-            [collect(c) for c in eachcol(X)],
-            y,
-            spec.lambda_b,
-            spec.lambda_p,
-            spec.lambda_op,
-            g_spec,
-            genome)
-    end
-
     @info "run_regression: Launching island jobs"
-    run_many_islands(spec, grow_and_rate, discovery_channel; stop_deadline, rng)
+    (condition, g_spec) = run_many_islands(prespec, X, y, discovery_channel; stop_deadline, rng)
 
-    @info "run_regression: Islands ended, best rating: $(best_so_far.rating)"
-    return best_so_far
+    @info "run_regression: Islands ended, condition = $condition"
+    @info "run_regression: best rating: $(best_so_far.rating)"
+    return (best_so_far, g_spec)
 end
 
 
 function regression_main(
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real},
-    spec_source::AbstractDict = Dict()
+    prespec::AbstractDict{<:AbstractString,<:Any} = Dict()
     )
-    @info "regression_main: spec_source = $spec_source"
+    @info "regression_main: prespec = $prespec"
+    # Explosions
+    op_inv_pre = prespec["op_inventory"]
+    op_inv_pre_seq = split_on_semicolons(op_inv_pre)
+    prespec["op_inventory"] = op_inv_pre_seq
     rng = Random.default_rng()
-    @cfield spec_source rng_seed 0xFEDCBA09876543210
+    @cfield prespec rng_seed 0xFEDCBA09876543210
     Random.seed!(rng, rng_seed)
     default_deadline = now() + Dates.Second(30)
-    stop_deadline = get_or_parse(spec_source, "stop_deadline", default_deadline)
+    stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
-    n_points, input_size = size(X)
-    @assert n_points == length(y)
-    spec = parse_search_spec(spec_source, input_size)
-    @info "regression_main: Search spec: $spec"
-    @info "regression_main: Stop deadline: $stop_deadline"
-    best_agent = run_regression(spec, X, y; stop_deadline)
-    sym_res = model_basic_symbolic_output(spec.genome_spec, best_agent)
+    (best_agent, genome_spec) = run_regression(prespec, X, y; stop_deadline)
+    sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @info "regression_main: Best (symbolic): $sym_res"
     y_num_str = to_careful_string(sym_res.y_num)
     @info "regression_main: Best (careful string): $y_num_str"

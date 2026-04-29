@@ -29,57 +29,58 @@ run the bulk of the evolutionary search.  Then a simplification
 end
 
 
-function parse_search_spec(s::AbstractDict=Dict(), input_size=2)
-    @debug "parse_search_spec: s: $s"
+function parse_search_spec(ps::AbstractDict=Dict(), input_size=2)
+    @debug "parse_search_spec: prespec: $ps"
     op_inventory_actual = begin
-        @cfield s op_inventory "Polynomial"
+        @cfield ps op_inventory "Polynomial"
         get_or_build_op_inventory(op_inventory)
     end
-    @debug "parse_search_spec: op_inventory_actual: $op_inventory_actual"
-    genome_spec_override = get_or_parse(s, "genome", Dict())
-    genome_spec = parse_genome_spec(genome_spec_override)
-    exploration_spec_override = get_or_parse(s, "exploration", Dict())
+    @debug "parse_search_prespec: op_inventory_actual: $op_inventory_actual"
+    genome_prespec = get_or_parse(ps, "genome", Dict())
+    genome_spec = parse_genome_spec(genome_prespec)
+    exploration_spec_override = get_or_parse(ps, "exploration", Dict())
     @assert !isnothing(exploration_spec_override)
-    exploration_spec = parse_epoch_spec(op_inventory_actual, exploration_spec_override)
-    simplification_spec_override = get_or_parse(s, "simplification", nothing)
+    exploration_spec =
+        parse_epoch_spec(op_inventory_actual, exploration_spec_override)
+    simplification_spec_override = get_or_parse(ps, "simplification", nothing)
     if isnothing(simplification_spec_override)
         simplification_spec = nothing
     else
         simplification_spec = parse_epoch_spec(op_inventory_actual, simplification_spec_override)
     end
-    ExploreSimplifySearchSpec(
+    return ExploreSimplifySearchSpec(
         ;
         genome_spec,
         exploration_spec,
         simplification_spec,
-        @cfield s lambda_b 1e-10
+        @cfield ps lambda_b 1e-10
         ,
-        @cfield s lambda_p 1e-10
+        @cfield ps lambda_p 1e-10
         ,
-        @cfield s lambda_op 1e-10
+        @cfield ps lambda_op 1e-10
         ,
-        @cfield s num_islands 1
+        @cfield ps num_islands 1
         ,
-        @cfield s stop_threshold nothing
+        @cfield ps stop_threshold nothing
         ,
     )
 end
 
 
-function parse_epoch_spec(op_inventory, s::AbstractDict=Dict())
+function parse_epoch_spec(op_inventory, ps::AbstractDict=Dict())
     # Pull mutation and selection paramters from the same dictionary.
     # I'm not putting in separate selection and mutation subsections.
-    m_spec = parse_mutation_spec(op_inventory, s)
-    s_spec = parse_selection_spec(s)
-    @cfield s max_generations 10
+    m_spec = parse_mutation_spec(op_inventory, ps)
+    s_spec = parse_selection_spec(ps)
+    @cfield ps max_generations 10
     EpochSpec(; m_spec, s_spec, max_generations)
 end
 
-function parse_genome_spec(s::AbstractDict=Dict(), input_size=2)
-    @cfield s output_size 4
-    @cfield s scratch_size 2
-    @cfield s parameter_size 3
-    @cfield s num_time_steps 4
+function parse_genome_spec(ps::AbstractDict=Dict(), input_size=2)
+    @cfield ps output_size 4
+    @cfield ps scratch_size 2
+    @cfield ps parameter_size 3
+    @cfield ps num_time_steps 4
     GenomeSpec(
         output_size,
         scratch_size,
@@ -89,10 +90,23 @@ function parse_genome_spec(s::AbstractDict=Dict(), input_size=2)
     )
 end
 
-function get_or_build_op_inventory(op_inventory_spec="")::AbstractVector{<:AbstractMultiOp}
+"""
+    split_on_semicolons(s)
+
+Split a string into substrings on semicolons, stripping out loose
+whitespace.
+"""
+function split_on_semicolons(s)
+    split(
+        s,
+        r"[[:space:]]*;[[:space:]]*",
+        keepempty=false)
+end
+
+function get_or_build_op_inventory(op_inventory_spec="")::Union{Missing,AbstractVector{<:AbstractMultiOp}}
     op_subspecs = split_symbols(op_inventory_spec)
     if isempty(op_subspecs)
-        return get_op_inventory().inventory
+        return missing
     else
         if length(op_subspecs) == 1
             op_inventory_lookup = get_op_inventory(op_subspecs[1])
@@ -102,11 +116,11 @@ function get_or_build_op_inventory(op_inventory_spec="")::AbstractVector{<:Abstr
         end
         op_inventory_build = build_op_inventory(op_subspecs)
         if !isempty(op_inventory_build.unknown)
-            @warn "get_or_build_op_inventory: Ignoring unrecognized operation inventory specs: $(join(op_inventory_build.unknown))"
+            @warn "get_or_build_op_inventory: Unrecognized operation inventory spec: $(join(op_inventory_build.unknown))"
         end
         if isempty(op_inventory_build.inventory)
-            @warn "get_or_build_op_inventory: No operations specified, using default polynomial inventory"
-            return get_op_inventory("Polynomial")
+            @warn "get_or_build_op_inventory: No operations specified by spec: $op_inventory_spec"
+            return missing
         end
         return op_inventory_build.inventory
     end
@@ -125,40 +139,59 @@ function split_symbols(s)
     [m.match for m in eachmatch(r"""[^][{},'"[:space:]]+""", s)]
 end
 
-function parse_mutation_spec(op_inventory, s::AbstractDict = Dict())
+function parse_mutation_spec(op_inventory, ps::AbstractDict = Dict())
     MutationSpec(
         ;
         op_inventory,
-        @cfield s p_mutate_op 0.15
+        @cfield ps p_mutate_op 0.15
         ,
-        @cfield s p_mutate_index 0.15
+        @cfield ps p_mutate_index 0.15
         ,
-        @cfield s p_duplicate_index 0.015
+        @cfield ps p_duplicate_index 0.015
         ,
-        @cfield s p_delete_index 0.015
+        @cfield ps p_delete_index 0.015
         ,
-        @cfield s p_duplicate_instruction 0.003
+        @cfield ps p_duplicate_instruction 0.003
         ,
-        @cfield s p_delete_instruction 0.003
+        @cfield ps p_delete_instruction 0.003
         ,
-        @cfield s p_hop_instruction 0.015
+        @cfield ps p_hop_instruction 0.015
     )
 end
 
-function parse_selection_spec(s::AbstractDict = Dict())
+function parse_selection_spec(ps::AbstractDict = Dict())
     SelectionSpec(
         ;
-        @cfield s num_to_keep 25
+        @cfield ps num_to_keep 25
         ,
-        @cfield s num_to_generate 75
+        @cfield ps num_to_generate 75
         ,
-        @cfield s p_take_better 0.65
+        @cfield ps p_take_better 0.65
         ,
-        @cfield s p_take_very_best 0.25
+        @cfield ps p_take_very_best 0.25
     )
 end
 
+function explode(prespecs::AbstractArray, explodable_fields::AbstractVector)
+    if isempty(explodable_fields)
+        prespecs
+    else
+        explode_on = explodable_fields[begin]
+        so_far = mapreduce(vcat, prespecs) do prespec
+            explode(prespec, explode_on)
+        end
+        explode(so_far, explodable_fields[2:end])
+    end
+end
 
-function f(;kwargs...)
-    print(kwargs)
+function explode(prespec::AbstractDict, explode_on::AbstractString)
+    map(prespec[explode_on]) do v_exp
+        exploded = Dict{String,Any}(explode_on => v_exp)
+        for (k, v) in pairs(prespec)
+            if k != explode_on
+                exploded[k] = v
+            end
+        end
+        exploded
+    end
 end

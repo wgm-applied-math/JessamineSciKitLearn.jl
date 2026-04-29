@@ -47,7 +47,7 @@ function get_or_parse(spec::AbstractDict, key, default_value, etype=typeof(defau
     value = get(spec, key, default_value)
     if isa(value, etype)
         return value
-    elseif isa(value, AbstractString)
+    elseif !isa(default_value, AbstractString) && isa(value, AbstractString)
         # Got a string that needs to be parsed
         p_val = Meta.parse(etype)
         e_val = eval(p_val)
