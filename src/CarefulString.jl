@@ -118,29 +118,40 @@ function careful_string(io, p::typeof(max); depth=0)
     print(io, "Max")
 end
 
-
-function careful_string(io, x::Real; depth=0)
-    basic = Ryu.writeshortest(Float64(x))
-    partsrx = r"(?<m>-?\d+(\.\d*)?)([eE](?<e>-?\d+))?"
-    m = match(partsrx, basic)
-    @assert m isa RegexMatch
-    me = m["e"]
-    mm = m["m"]
-    if !isnothing(me)
-        print(io, "($mm*10")
-        careful_string(io, ^, depth=depth)
-        print(io, "$me)")
+function careful_string(io, x::AbstractFloat; depth=0)
+    if isnan(x)
+        print(io, "NaN")
+    elseif isinf(x)
+        if x > 0
+            print(io, "Inf")
+        else
+            print(io, "(-Inf)")
+        end
     else
-        print(io, basic)
+        basic = Ryu.writeshortest(Float64(x))
+        partsrx = r"(?<m>-?\d+(\.\d*)?)([eE](?<e>[+-]?\d+))?"
+        m = match(partsrx, basic)
+        @assert m isa RegexMatch "Unable to parse real: $x as '$basic'"
+        me = m["e"]
+        mm = m["m"]
+        if !isnothing(me)
+            print(io, "($mm*10")
+            careful_string(io, ^, depth=depth)
+            print(io, "$me)")
+        else
+            print(io, basic)
+        end
     end
 end
 
 function careful_string(io, x::Rational; depth=0)
-    p = x.num
-    q = x.den
-    print(io, "($p")
-    careful_string(io, //, depth=0)
-    print(io, "$q)")
+    p = numerator(x)
+    q = denominator(x)
+    if q == 0
+	print(io, "($numerator/ϵ)")
+    else
+        print(io, "($numerator/$denominator)")
+    end
 end
 
 function careful_string(io, x::Integer; depth=0)
