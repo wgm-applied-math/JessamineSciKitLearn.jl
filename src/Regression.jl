@@ -16,7 +16,7 @@ function run_regression(
         for a in discovery_channel
             @info "run_regression: New discovery with rating $(a.rating)"
             if isnothing(best_so_far) || a.rating < best_so_far.rating
-                @info "run_regression: Keeping"
+                @info "run_regression: Keeping:\n$(very_short_show(a))"
                 best_so_far = a
             end
         end
@@ -48,6 +48,7 @@ function regression_main(
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
     (best_agent, genome_spec) = run_regression(prespec, X, y; stop_deadline)
+    @info "regression_main: Best:\n$(very_short_show(best_agent))"
     sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @info "regression_main: Best (symbolic): $sym_res"
     y_num_str = to_careful_string(sym_res.y_num)
