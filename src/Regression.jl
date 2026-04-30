@@ -34,7 +34,7 @@ end
 function regression_main(
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real},
-    prespec::AbstractDict{<:AbstractString,<:Any} = Dict()
+    prespec::AbstractDict{<:Any,<:Any} = Dict()
     )
     @info "regression_main: prespec = $prespec"
     # Explosions
