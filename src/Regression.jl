@@ -49,8 +49,8 @@ function regression_main(
     )
     @info "regression_main: spec_source = $spec_source"
     rng = Random.default_rng()
-    @cfield spec_source rng_seed 0xFEDCBA09876543210
-    Random.seed!(rng, rng_seed)
+    @cfield spec_source random_state 0xFEDCBA09876543210
+    Random.seed!(rng, random_state)
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(spec_source, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
