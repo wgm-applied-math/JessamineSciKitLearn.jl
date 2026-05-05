@@ -42,8 +42,8 @@ function regression_main(
     op_inv_pre_seq = split_on_semicolons(op_inv_pre)
     prespec["op_inventory"] = op_inv_pre_seq
     rng = Random.default_rng()
-    @cfield prespec rng_seed 0xFEDCBA09876543210
-    Random.seed!(rng, rng_seed)
+    @cfield prespec random_state 0xFEDCBA09876543210
+    Random.seed!(rng, random_state)
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
