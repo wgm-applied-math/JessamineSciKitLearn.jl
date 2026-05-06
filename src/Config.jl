@@ -29,7 +29,7 @@ run the bulk of the evolutionary search.  Then a simplification
 end
 
 
-function parse_search_spec(ps::AbstractDict=Dict(), input_size=2)
+function parse_search_spec(ps::AbstractDict, input_size::Int)
     @debug "parse_search_spec: prespec: $ps"
     op_inventory_actual = begin
         @cfield ps op_inventory "Polynomial"
@@ -37,7 +37,7 @@ function parse_search_spec(ps::AbstractDict=Dict(), input_size=2)
     end
     @debug "parse_search_prespec: op_inventory_actual: $op_inventory_actual"
     genome_prespec = get_or_parse(ps, "genome", Dict())
-    genome_spec = parse_genome_spec(genome_prespec)
+    genome_spec = parse_genome_spec(genome_prespec, input_size)
     exploration_spec_override = get_or_parse(ps, "exploration", Dict())
     @assert !isnothing(exploration_spec_override)
     exploration_spec =
@@ -67,7 +67,7 @@ function parse_search_spec(ps::AbstractDict=Dict(), input_size=2)
 end
 
 
-function parse_epoch_spec(op_inventory, ps::AbstractDict=Dict())
+function parse_epoch_spec(op_inventory, ps::AbstractDict)
     # Pull mutation and selection paramters from the same dictionary.
     # I'm not putting in separate selection and mutation subsections.
     m_spec = parse_mutation_spec(op_inventory, ps)
@@ -76,7 +76,7 @@ function parse_epoch_spec(op_inventory, ps::AbstractDict=Dict())
     EpochSpec(; m_spec, s_spec, max_generations)
 end
 
-function parse_genome_spec(ps::AbstractDict=Dict(), input_size=2)
+function parse_genome_spec(ps::AbstractDict, input_size::Int)
     @cfield ps output_size 4
     @cfield ps scratch_size 2
     @cfield ps parameter_size 3
