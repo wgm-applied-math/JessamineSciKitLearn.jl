@@ -122,9 +122,11 @@ function run_many_islands(
     function launch_islands(prespec)
         @info "run_many_islands/launch_islands: prespec = $prespec"
         spec = parse_search_spec(prespec, input_size)
+        @info "run_many_islands/launch_islands: spec = $spec"
         if isnothing(g_spec)
             g_spec = spec.genome_spec
         end
+        @info "run_many_islands/launch_islands: genome_spec = $g_spec"
 
         function grow_and_rate(rng, g_spec, genome)
             return least_squares_ridge_grow_and_rate(
