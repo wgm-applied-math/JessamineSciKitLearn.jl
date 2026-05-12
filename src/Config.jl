@@ -38,15 +38,18 @@ function parse_search_spec(ps::AbstractDict, input_size::Int)
     @debug "parse_search_prespec: op_inventory_actual: $op_inventory_actual"
     genome_prespec = get_or_parse(ps, "genome", Dict())
     genome_spec = parse_genome_spec(genome_prespec, input_size)
-    exploration_spec_override = get_or_parse(ps, "exploration", Dict())
-    @assert !isnothing(exploration_spec_override)
+    exploration_prespec = get_or_parse(ps, "exploration", Dict())
+    @assert !isnothing(exploration_prespec)
     exploration_spec =
-        parse_epoch_spec(op_inventory_actual, exploration_spec_override)
-    simplification_spec_override = get_or_parse(ps, "simplification", nothing)
-    if isnothing(simplification_spec_override)
-        simplification_spec = nothing
-    else
-        simplification_spec = parse_epoch_spec(op_inventory_actual, simplification_spec_override)
+        parse_epoch_spec(op_inventory_actual, exploration_prespec)
+    simplification_spec = nothing
+    simplify_flag = get_or_parse(ps, "simplify", false)
+    if simplify_flag
+        simplification_prespec = get_or_parse(
+            ps, "simplification",
+            Dict("p_duplicate_instruction" => 0.0, "p_duplicate_index" => 0.0))
+        simplification_prespec = merge(exploration_prespec, simplification_prespec)
+        simplification_spec = parse_epoch_spec(op_inventory_actual, simplification_prespec)
     end
     return ExploreSimplifySearchSpec(
         ;
