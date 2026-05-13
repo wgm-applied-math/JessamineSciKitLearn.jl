@@ -40,3 +40,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
+
+[sources]
+#Jessamine = {url = "https://github.com/wgm-applied-math/Jessamine.jl.git", rev = "v0.3.0"}
+#JessamineSymbolics = {url = "https://github.com/wgm-applied-math/JessamineSymbolics.jl.git", rev = "v0.3.0"}
