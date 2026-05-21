@@ -6,8 +6,8 @@ function run_regression(
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real};
     stop_deadline::Union{DateTime,Nothing} = nothing,
-    rng=Random.default_rng()
-    )
+    rng = Random.default_rng(),
+)
     @info "run_regression: prespec: $prespec"
 
     discovery_channel = Channel{Agent}(100)
@@ -23,7 +23,8 @@ function run_regression(
     end
 
     @info "run_regression: Launching island jobs"
-    (condition, g_spec) = run_many_islands(prespec, X, y, discovery_channel; stop_deadline, rng)
+    (condition, g_spec) =
+        run_many_islands(prespec, X, y, discovery_channel; stop_deadline, rng)
 
     @info "run_regression: Islands ended, condition = $condition"
     @info "run_regression: best rating: $(best_so_far.rating)"
@@ -34,8 +35,8 @@ end
 function regression_main(
     X::AbstractMatrix{<:Real},
     y::AbstractVector{<:Real},
-    prespec::AbstractDict{<:Any,<:Any} = Dict()
-    )
+    prespec::AbstractDict{<:Any,<:Any} = Dict(),
+)
     @info "regression_main: prespec = $prespec"
     # Explosions
     op_inv_pre = prespec["op_inventory"]
