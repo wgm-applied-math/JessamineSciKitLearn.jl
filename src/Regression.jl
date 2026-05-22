@@ -2,9 +2,9 @@ export regression_main
 
 
 function run_regression(
-    prespec::AbstractDict,
-    X::AbstractMatrix{<:Real},
-    y::AbstractVector{<:Real};
+    X, # X::AbstractMatrix{<:Real},
+    y, # y::AbstractVector{<:Real},
+    prespec::AbstractDict;
     stop_deadline::Union{DateTime,Nothing} = nothing,
     rng = Random.default_rng(),
 )
@@ -33,10 +33,10 @@ end
 
 
 function regression_main(
-    X::AbstractMatrix{<:Real},
-    y::AbstractVector{<:Real},
-    prespec::AbstractDict{<:Any,<:Any} = Dict(),
-)
+    X, # X::AbstractMatrix{<:Real},
+    y, # y::AbstractVector{<:Real},
+    prespec::AbstractDict{<:Any,<:Any} = Dict()
+    )
     @info "regression_main: prespec = $prespec"
     # Explosions
     op_inv_pre = prespec["op_inventory"]
@@ -48,7 +48,7 @@ function regression_main(
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
-    (best_agent, genome_spec) = run_regression(prespec, X, y; stop_deadline)
+    (best_agent, genome_spec) = run_regression(X, y, prespec, stop_deadline = stop_deadline)
     @info "regression_main: Best:\n$(very_short_show(best_agent))"
     sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @info "regression_main: Best (symbolic): $sym_res"
