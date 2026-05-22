@@ -1,4 +1,4 @@
-export regression_main
+export regression_main, regression_main_detailed
 
 
 function run_regression(
@@ -32,7 +32,7 @@ function run_regression(
 end
 
 
-function regression_main(
+function regression_main_detailed(
     X, # X::AbstractMatrix{<:Real},
     y, # y::AbstractVector{<:Real},
     prespec::AbstractDict{<:Any,<:Any} = Dict()
@@ -54,5 +54,13 @@ function regression_main(
     @info "regression_main: Best (symbolic): $sym_res"
     y_num_str = to_careful_string(sym_res.y_num)
     @info "regression_main: Best (careful string): $y_num_str"
-    return y_num_str
+    (best_agent = best_agent,
+     genome_spec = genome_spec,
+     sym_res = sym_res,
+     y_num_str = y_num_str)
+end
+
+function regression_main(X, y, prespec::AbstractDict{<:Any,<:Any} = Dict())
+    result = regression_main_detailed(X, y, prespec)
+    return result.y_num_str
 end
