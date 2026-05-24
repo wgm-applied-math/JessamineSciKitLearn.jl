@@ -24,7 +24,7 @@ function run_regression(
 
     @info "run_regression: Launching island jobs"
     (condition, g_spec) =
-        run_many_islands(prespec, X, y, discovery_channel; stop_deadline, rng)
+        run_many_islands(X, y, discovery_channel, prespec; stop_deadline, rng)
 
     @info "run_regression: Islands ended, condition = $condition"
     @info "run_regression: best rating: $(best_so_far.rating)"
