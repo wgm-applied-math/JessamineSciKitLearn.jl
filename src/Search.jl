@@ -69,10 +69,10 @@ end
 
 
 function run_many_islands(
-    prespec::AbstractDict,
     X,
     y,
     discovery_channel::Channel{Agent},
+    prespec::AbstractDict,
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
     rng = Random.default_rng(),
