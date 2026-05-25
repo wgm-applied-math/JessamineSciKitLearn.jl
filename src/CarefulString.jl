@@ -148,9 +148,9 @@ function careful_string(io, x::Rational; depth = 0)
     p = numerator(x)
     q = denominator(x)
     if q == 0
-        print(io, "($numerator/ϵ)")
+        print(io, "($p/ϵ)")
     else
-        print(io, "($numerator/$denominator)")
+        print(io, "($p/$q)")
     end
 end
 
