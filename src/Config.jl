@@ -35,7 +35,7 @@ function parse_search_spec(ps::AbstractDict, input_size::Int)
         @cfield ps op_inventory "Polynomial"
         get_or_build_op_inventory(op_inventory)
     end
-    @debug "parse_search_prespec: op_inventory_actual: $op_inventory_actual"
+    @debug "parse_search_spec: op_inventory_actual: $op_inventory_actual"
     genome_spec = parse_genome_spec(ps, input_size)
     exploration_spec = parse_epoch_spec(op_inventory_actual, ps)
     simplification_spec = nothing
@@ -76,17 +76,21 @@ function parse_epoch_spec(op_inventory, ps::AbstractDict)
 end
 
 function parse_genome_spec(ps::AbstractDict, input_size::Int)
+    @debug "parse_genome_spec: input_size: $input_size"
+    @debug "parse_genome_spec: ps: $ps"
     @cfield ps output_size 4
     @cfield ps scratch_size 2
     @cfield ps parameter_size 3
     @cfield ps num_time_steps 4
-    GenomeSpec(
+    genome_spec = GenomeSpec(
         output_size,
         scratch_size,
         parameter_size,
         input_size,
         num_time_steps
     )
+    @debug "parse_genome_spec: g_spec: $genome_spec"
+    return genome_spec
 end
 
 """
@@ -139,7 +143,8 @@ function split_symbols(s)
 end
 
 function parse_mutation_spec(op_inventory, ps::AbstractDict = Dict())
-    MutationSpec(
+    @debug "parse_mutation_spec: ps: $ps"
+    m_spec = MutationSpec(
         ;
         op_inventory,
         @cfield ps p_mutate_op 0.15
@@ -156,6 +161,8 @@ function parse_mutation_spec(op_inventory, ps::AbstractDict = Dict())
         ,
         @cfield ps p_hop_instruction 0.015
     )
+    @debug "parse_mutation_spec: m_spec: $m_spec"
+    return m_spec
 end
 
 function parse_selection_spec(ps::AbstractDict = Dict())
