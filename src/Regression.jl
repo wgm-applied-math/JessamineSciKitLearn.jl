@@ -14,11 +14,14 @@ function run_regression(
     best_so_far = nothing
     Threads.@spawn begin
         for a in discovery_channel
-            @info "run_regression: New discovery with rating $(a.rating)"
+            @info "run_regression: Received agent with rating $(a.rating)"
             if isnothing(best_so_far) || a.rating < best_so_far.rating
-                @info "run_regression: Keeping:\n$(very_short_show(a))"
+                @info "run_regression: New best rating $(a.rating):\n$(very_short_show(a))"
                 best_so_far = a
+            elseif !isnothing(best_so_far)
+                @info "run_regression: Not better than $(best_so_far.rating)"
             end
+
         end
     end
 

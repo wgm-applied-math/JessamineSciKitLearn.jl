@@ -90,10 +90,10 @@ function run_many_islands(
             @info "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
             if isnothing(best_rating) || a.rating < best_rating
                 best_rating = a.rating
-                @debug "run_regression_many_islands/filter_discoveries: New best rating $best_rating"
+                @info "run_many_islands/filter_discoveries: New best rating $best_rating"
                 put!(c_put, a)
             else
-                @debug "run_many_islands/filter_discoveries: Not better than $best_rating"
+                @info "run_many_islands/filter_discoveries: Not better than $best_rating"
             end
         end
     end
