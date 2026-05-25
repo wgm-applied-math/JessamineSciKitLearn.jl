@@ -44,7 +44,7 @@ function regression_main_detailed(
     prespec["op_inventory"] = op_inv_pre_seq
     rng = Random.default_rng()
     # scikit-learn requires a 32-bit integer for the random state.
-    @cfield prespec random_state UInt32(0x876543210)
+    @cfield prespec random_state UInt32(0x76543210)
     Random.seed!(rng, random_state)
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
