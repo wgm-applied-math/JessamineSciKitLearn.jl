@@ -15,6 +15,8 @@ tuple, keyword argument to a function call, etc.
 Note that for inclusion in a named tuple or function call,
 the `@cfield spec key value` has to be on a line by itself,
 so the comma has to go on the next line.
+
+If `etype` is omitted, it defaults to the type of `default_value`.
 """
 macro cfield(spec, key, default_value, etype)
     :(
