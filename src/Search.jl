@@ -9,6 +9,7 @@ function run_island(
     finished_channel::Channel{Tuple{Population,ExploreSimplifySearchJob}},
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
+    stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
 )
     @debug "run_island: Top"
@@ -35,8 +36,9 @@ function run_island(
     pop_after_explore = evolution_loop(
         rng,
         explore_evolution_spec,
-        pop_init,
-        stop_deadline = stop_deadline,
+        pop_init;
+        stop_deadline,
+        stop_threshold,
         discovery_channel = job.discovery_channel,
     )
     @debug "run_island: End exploration stage"
@@ -75,6 +77,7 @@ function run_many_islands(
     prespec::AbstractDict,
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
+    stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
 )
 
@@ -116,7 +119,7 @@ function run_many_islands(
         @debug "run_many_islands/launch_island: Launching island"
         Threads.@spawn begin
             try
-                run_island(job, finished_channel; stop_deadline, rng)
+                run_island(job, finished_channel; stop_deadline, stop_threshold, rng)
             catch err
                 @error "run_many_islands: Exception during run_island" exception=(
                     err,
@@ -172,6 +175,15 @@ function run_many_islands(
         # end
         if !isnothing(stop_deadline) && now() > stop_deadline
             condition = ReachedDeadline()
+            break
+        end
+
+        # If we've hit the desired threshold, stop.
+        if (!isnothing(stop_threshold)
+            && !isnothing(best_rating)
+            && best_rating < stop_threshold)
+            @debug "run_many_islands: Reached stop threshold; stopping"
+            condition = ReachedStopThreshold()
             break
         end
 

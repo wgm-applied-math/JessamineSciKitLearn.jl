@@ -6,6 +6,7 @@ function run_regression(
     y, # y::AbstractVector{<:Real},
     prespec::AbstractDict;
     stop_deadline::Union{DateTime,Nothing} = nothing,
+    stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
 )
     @info "run_regression: prespec: $prespec"
@@ -27,7 +28,8 @@ function run_regression(
 
     @info "run_regression: Launching island jobs"
     (condition, g_spec) =
-        run_many_islands(X, y, discovery_channel, prespec; stop_deadline, rng)
+        run_many_islands(X, y, discovery_channel, prespec;
+                         stop_deadline, stop_threshold, rng)
 
     @info "run_regression: Islands ended, condition = $condition"
     @info "run_regression: best rating: $(best_so_far.rating)"
@@ -46,13 +48,18 @@ function regression_main_detailed(
     op_inv_pre_seq = split_on_semicolons(op_inv_pre)
     prespec["op_inventory"] = op_inv_pre_seq
     rng = Random.default_rng()
-    # scikit-learn requires a 32-bit integer for the random state.
-    @cfield prespec random_state UInt32(0x76543210)
+    # scikit-learn requires a 32-bit integer for the random state, but I can use a UInt64 in Julia.
+    @cfield prespec random_state 0xb6500bd3306fd1ca UInt64
+    random_state_str = @sprintf "0x%x" random_state
+    @info "regression_main: Random state seeded with $random_state_str"
     Random.seed!(rng, random_state)
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
-    (best_agent, genome_spec) = run_regression(X, y, prespec, stop_deadline = stop_deadline)
+    @cfield prespec stop_threshold nothing Union{Float64,Nothing}
+    @info "regression_main: stop_threshold = $stop_threshold"
+    (best_agent, genome_spec) = run_regression(X, y, prespec;
+                                               stop_deadline, stop_threshold)
     @info "regression_main: Best:\n$(very_short_show(best_agent))"
     sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @info "regression_main: Best (symbolic): $sym_res"
