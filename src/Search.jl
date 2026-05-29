@@ -9,7 +9,8 @@ function run_island(
     finished_channel::Channel{Tuple{Population,ExploreSimplifySearchJob}},
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
-    rng = Random.default_rng())
+    rng = Random.default_rng(),
+)
     @debug "run_island: Top"
 
     spec = job.spec
@@ -36,7 +37,8 @@ function run_island(
         explore_evolution_spec,
         pop_init,
         stop_deadline = stop_deadline,
-        discovery_channel = job.discovery_channel)
+        discovery_channel = job.discovery_channel,
+    )
     @debug "run_island: End exploration stage"
     final_pop = pop_after_explore
     if isnothing(job.spec.simplification_spec)
@@ -57,7 +59,8 @@ function run_island(
             pop_after_explore,
             stop_threshold = spec.stop_threshold,
             stop_deadline = stop_deadline,
-            discovery_channel = job.discovery_channel)
+            discovery_channel = job.discovery_channel,
+        )
         @debug "run_island: End simplification stage"
         final_pop = pop_after_simplify
     end
@@ -66,13 +69,14 @@ end
 
 
 function run_many_islands(
-    prespec::AbstractDict,
     X,
     y,
     discovery_channel::Channel{Agent},
+    prespec::AbstractDict,
     ;
     stop_deadline::Union{DateTime,Nothing} = nothing,
-    rng = Random.default_rng())
+    rng = Random.default_rng(),
+)
 
     @info "run_many_islands: prespec = $prespec"
 
@@ -86,10 +90,10 @@ function run_many_islands(
             @info "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
             if isnothing(best_rating) || a.rating < best_rating
                 best_rating = a.rating
-                @debug "run_regression_many_islands/filter_discoveries: New best rating $best_rating"
+                @info "run_many_islands/filter_discoveries: New best rating $best_rating"
                 put!(c_put, a)
             else
-                @debug "run_many_islands/filter_discoveries: Not better than $best_rating"
+                @info "run_many_islands/filter_discoveries: Not better than $best_rating"
             end
         end
     end
@@ -99,7 +103,10 @@ function run_many_islands(
         try
             filter_discoveries(unfiltered_channel, discovery_channel)
         catch err
-            @error "run_many_islands: Exception during ./filter_discoveries" exception=(err, catch_backtrace())
+            @error "run_many_islands: Exception during ./filter_discoveries" exception=(
+                err,
+                catch_backtrace(),
+            )
             rethrow()
         end
     end
@@ -111,7 +118,10 @@ function run_many_islands(
             try
                 run_island(job, finished_channel; stop_deadline, rng)
             catch err
-                @error "run_many_islands: Exception during run_island" exception=(err, catch_backtrace())
+                @error "run_many_islands: Exception during run_island" exception=(
+                    err,
+                    catch_backtrace(),
+                )
                 rethrow()
             end
         end
@@ -136,16 +146,13 @@ function run_many_islands(
                 spec.lambda_p,
                 spec.lambda_op,
                 g_spec,
-                genome)
+                genome,
+            )
         end
 
-        job = ExploreSimplifySearchJob(
-            spec,
-            grow_and_rate,
-            unfiltered_channel
-        )
+        job = ExploreSimplifySearchJob(spec, grow_and_rate, unfiltered_channel)
 
-        for j in 1:spec.num_islands
+        for j = 1:spec.num_islands
             @debug "run_many_islands/launch_islands: Launching island $j"
             launch_island(job)
         end
