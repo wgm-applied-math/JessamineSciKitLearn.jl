@@ -52,15 +52,15 @@ function parse_search_spec(ps::AbstractDict, input_size::Int)
         genome_spec,
         exploration_spec,
         simplification_spec,
-        @cfield ps lambda_b 1e-10
+        @cfield ps lambda_b 1.0e-10
         ,
-        @cfield ps lambda_p 1e-10
+        @cfield ps lambda_p 1.0e-10
         ,
-        @cfield ps lambda_op 1e-10
+        @cfield ps lambda_op 1.0e-10
         ,
         @cfield ps num_islands 1
         ,
-        @cfield ps stop_threshold nothing
+        @cfield ps stop_threshold nothing Union{Float64,Nothing}
         ,
     )
 end
