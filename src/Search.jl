@@ -32,6 +32,10 @@ function run_island(
         domain_safe = true,
     )
     @debug "run_island: End random_initial_population"
+    # Send best so far to the discovery channel.  Sometimes the
+    # problem is so easy that the best is discovered right away,
+    # and if we don't send it now, it never gets sent.
+    put!(job.discovery_channel, pop_init.agents[1])
     @debug "run_island: Begin exploration stage"
     pop_after_explore = evolution_loop(
         rng,
