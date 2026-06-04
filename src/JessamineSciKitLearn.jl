@@ -26,5 +26,4 @@ include("Search.jl")
 include("CarefulString.jl")
 include("Regression.jl")
 
-
 end
