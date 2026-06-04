@@ -17,9 +17,6 @@ using TermInterface
 # This does floating point printout
 using Base.Ryu
 
-
-
-
 using Jessamine
 using JessamineSymbolics
 
