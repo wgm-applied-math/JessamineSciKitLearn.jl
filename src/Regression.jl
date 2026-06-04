@@ -61,10 +61,13 @@ function regression_main_detailed(
     prespec["op_inventory"] = op_inv_pre_seq
     rng = Random.default_rng()
     # scikit-learn requires a 32-bit integer for the random state, but I can use a UInt64 in Julia.
-    @cfield prespec random_state 0xb6500bd3306fd1ca UInt64
-    random_state_str = @sprintf "0x%x" random_state
-    @info "regression_main: Random state seeded with $random_state_str"
-    Random.seed!(rng, random_state)
+    # I used a default of 0xb6500bd3306fd1ca for a while
+    @cfield prespec random_state nothing Union{Nothing,UInt64}
+    if !isnothing(random_state)
+        random_state_str = @sprintf "0x%x" random_state
+        @info "regression_main: Random state seeded with $random_state_str"
+        Random.seed!(rng, random_state)
+    end
     default_deadline = now() + Dates.Second(30)
     stop_deadline = get_or_parse(prespec, "stop_deadline", default_deadline)
     @info "regression_main: stop_deadline = $stop_deadline"
