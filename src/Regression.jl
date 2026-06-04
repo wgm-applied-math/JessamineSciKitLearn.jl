@@ -1,5 +1,10 @@
 export regression_main, regression_main_detailed
 
+function save_progress_file(progress_file, agent)
+    @debug "save_progress_file: Writing" progress_file=progress_file agent=agent
+    mkpath(dirname(progress_file))
+    JSON.json(progress_file, agent)
+end
 
 function run_regression(
     X, # X::AbstractMatrix{<:Real},
@@ -8,6 +13,7 @@ function run_regression(
     stop_deadline::Union{DateTime,Nothing} = nothing,
     stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
+    new_best_agent_hook::Union{Function,Nothing} = nothing,
 )
     @info "run_regression: prespec: $prespec"
 
@@ -19,6 +25,12 @@ function run_regression(
             if isnothing(best_so_far) || a.rating < best_so_far.rating
                 @info "run_regression: New best rating $(a.rating):\n$(very_short_show(a))"
                 best_so_far = a
+                if !isnothing(new_best_agent_hook)
+                    @debug "run_regression: Running new_best_agent_hook"
+                    new_best_agent_hook(a)
+                else
+                    @debug "run_regression: No new_best_agent_hook"
+                end
             elseif !isnothing(best_so_far)
                 @info "run_regression: Not better than $(best_so_far.rating)"
             end
@@ -58,8 +70,16 @@ function regression_main_detailed(
     @info "regression_main: stop_deadline = $stop_deadline"
     @cfield prespec stop_threshold nothing Union{Float64,Nothing}
     @info "regression_main: stop_threshold = $stop_threshold"
-    (best_agent, genome_spec) = run_regression(X, y, prespec;
-                                               stop_deadline, stop_threshold)
+    @cfield prespec progress_file nothing Union{String,Nothing}
+    new_best_agent_hook = if isnothing(progress_file)
+        nothing
+    else
+        @info "regression_main: progress_file = $progress_file"
+        agent -> save_progress_file(progress_file, agent)
+    end
+    (best_agent, genome_spec) = run_regression(
+        X, y, prespec;
+        stop_deadline, stop_threshold, new_best_agent_hook)
     @info "regression_main: Best:\n$(very_short_show(best_agent))"
     sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @info "regression_main: Best (symbolic): $sym_res"
