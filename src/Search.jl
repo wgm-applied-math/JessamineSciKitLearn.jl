@@ -11,6 +11,7 @@ function run_island(
     stop_deadline::Union{DateTime,Nothing} = nothing,
     stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
+    verbosity = 1,
 )
     @debug "run_island: Top"
 
@@ -29,7 +30,7 @@ function run_island(
         rng,
         explore_evolution_spec,
         arity_dist,
-        domain_safe = true,
+        domain_safe = true
     )
     @debug "run_island: End random_initial_population"
     # Send best so far to the discovery channel.  Sometimes the
@@ -43,6 +44,7 @@ function run_island(
         pop_init;
         stop_deadline,
         stop_threshold,
+        verbosity,
         discovery_channel = job.discovery_channel,
     )
     @debug "run_island: End exploration stage"
@@ -66,6 +68,7 @@ function run_island(
             stop_threshold = spec.stop_threshold,
             stop_deadline = stop_deadline,
             discovery_channel = job.discovery_channel,
+            verbosity = verbosity
         )
         @debug "run_island: End simplification stage"
         final_pop = pop_after_simplify
@@ -83,9 +86,10 @@ function run_many_islands(
     stop_deadline::Union{DateTime,Nothing} = nothing,
     stop_threshold::Union{Real,Nothing} = nothing,
     rng = Random.default_rng(),
+    verbosity = 1
 )
 
-    @info "run_many_islands: prespec = $prespec"
+    @debug "run_many_islands: prespec = $prespec"
 
     n_points, input_size = size(X)
     @assert n_points == length(y)
@@ -94,13 +98,13 @@ function run_many_islands(
 
     function filter_discoveries(c_get, c_put)
         for a in c_get
-            @info "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
+            @debug_or_info verbosity "run_many_islands/filter_discoveries: Received agent with rating $(a.rating)"
             if isnothing(best_rating) || a.rating < best_rating
                 best_rating = a.rating
-                @info "run_many_islands/filter_discoveries: New best rating $best_rating"
+                @debug_or_info verbosity "run_many_islands/filter_discoveries: New best rating $best_rating"
                 put!(c_put, a)
             else
-                @info "run_many_islands/filter_discoveries: Not better than $best_rating"
+                @debug_or_info verbosity "run_many_islands/filter_discoveries: Not better than $best_rating"
             end
         end
     end
@@ -123,7 +127,7 @@ function run_many_islands(
         @debug "run_many_islands/launch_island: Launching island"
         Threads.@spawn begin
             try
-                run_island(job, finished_channel; stop_deadline, stop_threshold, rng)
+                run_island(job, finished_channel; stop_deadline, stop_threshold, rng, verbosity)
             catch err
                 @error "run_many_islands: Exception during run_island" exception=(
                     err,
@@ -137,13 +141,13 @@ function run_many_islands(
     g_spec = nothing
 
     function launch_islands(prespec)
-        @info "run_many_islands/launch_islands: prespec = $prespec"
+        @debug verbosity "run_many_islands/launch_islands: prespec = $prespec"
         spec = parse_search_spec(prespec, input_size)
-        @info "run_many_islands/launch_islands: spec = $spec"
+        @debug "run_many_islands/launch_islands: spec = $spec"
         if isnothing(g_spec)
             g_spec = spec.genome_spec
         end
-        @info "run_many_islands/launch_islands: genome_spec = $g_spec"
+        @debug "run_many_islands/launch_islands: genome_spec = $g_spec"
 
         function grow_and_rate(rng, g_spec, genome)
             return least_squares_ridge_grow_and_rate(
