@@ -1,9 +1,16 @@
 export regression_main, regression_main_detailed
 
+start_time = now()
+
 function save_progress_file(progress_file, agent)
     @debug "save_progress_file: Writing" progress_file=progress_file agent=agent
     mkpath(dirname(progress_file))
-    JSON.json(progress_file, agent)
+    report = Dict(
+        "current_time" => now(),
+        "start_time" => start_time,
+        "agent" => agent,
+    )
+    JSON.json(progress_file, report)
 end
 
 function run_regression(
