@@ -141,7 +141,7 @@ function run_many_islands(
     g_spec = nothing
 
     function launch_islands(prespec)
-        @debug verbosity "run_many_islands/launch_islands: prespec = $prespec"
+        @debug "run_many_islands/launch_islands: prespec = $prespec"
         spec = parse_search_spec(prespec, input_size)
         @debug "run_many_islands/launch_islands: spec = $spec"
         if isnothing(g_spec)
