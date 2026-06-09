@@ -149,10 +149,20 @@ function run_many_islands(
         end
         @debug "run_many_islands/launch_islands: genome_spec = $g_spec"
 
+        # The definition of xs should conceptually be just
+        # eachcol(X).  The contortions here are for type sanity.
+        # If I don't do the collect(), then there's chaos trying
+        # to deal with the columns of X when it's a DataFrame and
+        # the columns can theoretically have different element
+        # types.  I don't entirely understand this.  The problem
+        # manifests as exceptions involving evaluating
+        # Jessamine.Multiply() with an empty operand list: It
+        # can't figure out the correct type of 1 to use.
+        xs = [collect(c) for c in eachcol(X)]
+
         function grow_and_rate(rng, g_spec, genome)
             return least_squares_ridge_grow_and_rate(
-                #[collect(c) for c in eachcol(X)],
-                collect(eachcol(X)),
+                xs,
                 y,
                 spec.lambda_b,
                 spec.lambda_p,
