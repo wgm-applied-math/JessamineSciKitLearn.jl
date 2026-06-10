@@ -27,12 +27,14 @@ function run_regression(
 
     discovery_channel = Channel{Agent}(100)
     best_so_far = nothing
+    all_discoveries = []
     Threads.@spawn begin
         for a in discovery_channel
             @debug "run_regression: Received agent with rating $(a.rating)"
             if isnothing(best_so_far) || a.rating < best_so_far.rating
                 @debug_or_info verbosity "run_regression: New best rating $(a.rating):\n$(very_short_show(a))"
                 best_so_far = a
+                push!(all_discoveries, a)
                 if !isnothing(new_best_agent_hook)
                     @debug "run_regression: Running new_best_agent_hook"
                     new_best_agent_hook(a)
@@ -53,7 +55,8 @@ function run_regression(
 
     @debug_or_info verbosity "run_regression: Islands ended, condition = $condition"
     @debug_or_info verbosity "run_regression: best rating: $(best_so_far.rating)"
-    return (best_so_far, g_spec)
+    sort!(all_discoveries)
+    return (best_so_far, g_spec, all_discoveries)
 end
 
 
@@ -89,21 +92,22 @@ function regression_main_detailed(
         @debug "regression_main: progress_file = $progress_file"
         agent -> save_progress_file(progress_file, agent)
     end
-    (best_agent, genome_spec) = run_regression(
-        X, y, prespec;
-        stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
+    (best_agent, genome_spec, all_discoveries) = run_regression(X, y, prespec;
+                                                                stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
     @debug_or_info verbosity "regression_main: Best:\n$(very_short_show(best_agent))"
+
     sym_res = model_basic_symbolic_output(genome_spec, best_agent)
     @debug_or_info verbosity "regression_main: Best (symbolic): $sym_res"
     y_num_str = to_careful_string(sym_res.y_num)
     @debug_or_info verbosity "regression_main: Best (careful string): $y_num_str"
-    (best_agent = best_agent,
-     genome_spec = genome_spec,
-     sym_res = sym_res,
-     y_num_str = y_num_str)
+    discoveries = map(all_discoveries) do agent
+        sym_res = model_basic_symbolic_output(genome_spec, agent)
+        y_num_str = to_careful_string(sym_res.y_num)
+        (y_num_str = y_num_str, agent = agent)
+    end
+    return (genome_spec = genome_spec, discoveries = discoveries)
 end
 
 function regression_main(X, y, prespec::AbstractDict{<:Any,<:Any} = Dict())
-    result = regression_main_detailed(X, y, prespec)
-    return result.y_num_str
+    regression_main_detailed(X, y, prespec)
 end
