@@ -1,7 +1,48 @@
-struct ExploreSimplifySearchJob
+struct ExploreSimplifySearchJob{TX,Ty}
     spec::ExploreSimplifySearchSpec
-    grow_and_rate::Any
+    X::TX
+    y::Ty
+    random_subset_count::Union{Nothing,UInt64}
     discovery_channel::Channel{Agent}
+end
+
+
+function make_grow_and_rate(rng, job::ExploreSimplifySearchJob)
+    spec = job.spec
+
+    if isnothing(job.random_subset_count)
+        X = job.X
+        y = job.y
+    else
+        train_ixs = rand(rng, eachindex(job.y), job.random_subset_count)
+        X = job.X[train_ixs,:]
+        y = job.y[train_ixs]
+    end
+
+    # The definition of xs should conceptually be just
+    # eachcol(X).  The contortions here are for type sanity.  If
+    # I don't do the collect(), then there's chaos trying to deal
+    # with the columns of X when it's a DataFrame and the columns
+    # can theoretically have different element types.  I don't
+    # entirely understand this.  The problem manifests as
+    # exceptions involving evaluating Jessamine.Multiply() with
+    # an empty operand list: It can't figure out the correct type
+    # of 1 to use.
+    xs = [collect(c) for c in eachcol(X)]
+
+    function grow_and_rate(rng, g_spec, genome)
+        return least_squares_ridge_grow_and_rate(
+            xs,
+            y,
+            spec.lambda_b,
+            spec.lambda_p,
+            spec.lambda_op,
+            g_spec,
+            genome,
+        )
+    end
+
+    return grow_and_rate
 end
 
 function run_island(
@@ -18,11 +59,13 @@ function run_island(
     spec = job.spec
     arity_dist = DiscreteNonParametric([1, 2, 3], [0.25, 0.5, 0.25])
 
+    grow_and_rate = make_grow_and_rate(rng, job)
+
     explore_evolution_spec = EvolutionSpec(
         spec.genome_spec,
         spec.exploration_spec.m_spec,
         spec.exploration_spec.s_spec,
-        job.grow_and_rate,
+        grow_and_rate,
         spec.exploration_spec.max_generations,
     )
     @debug "run_island: Begin random_initial_population"
@@ -56,7 +99,7 @@ function run_island(
             spec.genome_spec,
             spec.simplification_spec.m_spec,
             spec.simplification_spec.s_spec,
-            job.grow_and_rate,
+            grow_and_rate,
             spec.simplification_spec.max_generations,
         )
 
@@ -70,7 +113,7 @@ function run_island(
             discovery_channel = job.discovery_channel,
             verbosity = verbosity
         )
-        @debug "run_island: End simplification stage"
+        @debug "run_island: End evolutionary simplification stage"
         final_pop = pop_after_simplify
     end
     put!(finished_channel, (final_pop, job))
@@ -90,6 +133,8 @@ function run_many_islands(
 )
 
     @debug "run_many_islands: prespec = $prespec"
+
+    @cfield prespec random_subset_count nothing Union{Nothing,UInt64}
 
     n_points, input_size = size(X)
     @assert n_points == length(y)
@@ -118,7 +163,7 @@ function run_many_islands(
                 err,
                 catch_backtrace(),
             )
-            rethrow()
+            #rethrow()
         end
     end
     finished_channel = Channel{Tuple{Population,ExploreSimplifySearchJob}}(100)
@@ -133,7 +178,7 @@ function run_many_islands(
                     err,
                     catch_backtrace(),
                 )
-                rethrow()
+                #rethrow()
             end
         end
     end
@@ -149,30 +194,7 @@ function run_many_islands(
         end
         @debug "run_many_islands/launch_islands: genome_spec = $g_spec"
 
-        # The definition of xs should conceptually be just
-        # eachcol(X).  The contortions here are for type sanity.
-        # If I don't do the collect(), then there's chaos trying
-        # to deal with the columns of X when it's a DataFrame and
-        # the columns can theoretically have different element
-        # types.  I don't entirely understand this.  The problem
-        # manifests as exceptions involving evaluating
-        # Jessamine.Multiply() with an empty operand list: It
-        # can't figure out the correct type of 1 to use.
-        xs = [collect(c) for c in eachcol(X)]
-
-        function grow_and_rate(rng, g_spec, genome)
-            return least_squares_ridge_grow_and_rate(
-                xs,
-                y,
-                spec.lambda_b,
-                spec.lambda_p,
-                spec.lambda_op,
-                g_spec,
-                genome,
-            )
-        end
-
-        job = ExploreSimplifySearchJob(spec, grow_and_rate, unfiltered_channel)
+        job = ExploreSimplifySearchJob(spec, X, y, random_subset_count, unfiltered_channel)
 
         for j = 1:spec.num_islands
             @debug "run_many_islands/launch_islands: Launching island $j"

@@ -3,7 +3,7 @@ using Distributions
 using Random
 rng = Xoshiro(161004)
 
-num_points = 30
+num_points = 100
 x1_dist = Normal(0.0, 1.0)
 x1 = rand(rng, x1_dist, num_points)
 x2_dist = Normal(0.0, 2.0)

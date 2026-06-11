@@ -92,6 +92,7 @@ function regression_main_detailed(
         @debug "regression_main: progress_file = $progress_file"
         agent -> save_progress_file(progress_file, agent)
     end
+
     (best_agent, genome_spec, all_discoveries) = run_regression(X, y, prespec;
                                                                 stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
     @debug_or_info verbosity "regression_main: Best:\n$(very_short_show(best_agent))"
