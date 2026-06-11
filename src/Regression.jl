@@ -96,10 +96,12 @@ function regression_main_detailed(
                                                                 stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
     @debug_or_info verbosity "regression_main: Best:\n$(very_short_show(best_agent))"
 
-    sym_res = model_basic_symbolic_output(genome_spec, best_agent)
-    @debug_or_info verbosity "regression_main: Best (symbolic): $sym_res"
-    y_num_str = to_careful_string(sym_res.y_num)
-    @debug_or_info verbosity "regression_main: Best (careful string): $y_num_str"
+    if !isnothing(best_agent)
+        sym_res = model_basic_symbolic_output(genome_spec, best_agent)
+        @debug_or_info verbosity "regression_main: Best (symbolic): $sym_res"
+        y_num_str = to_careful_string(sym_res.y_num)
+        @debug_or_info verbosity "regression_main: Best (careful string): $y_num_str"
+    end
     discoveries = map(all_discoveries) do agent
         sym_res = model_basic_symbolic_output(genome_spec, agent)
         y_num_str = to_careful_string(sym_res.y_num)
