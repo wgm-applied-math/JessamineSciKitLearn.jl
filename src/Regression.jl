@@ -31,10 +31,10 @@ function run_regression(
     Threads.@spawn begin
         for a in discovery_channel
             @debug "run_regression: Received agent with rating $(a.rating)"
+            push!(all_discoveries, a)
             if isnothing(best_so_far) || a.rating < best_so_far.rating
                 @debug_or_info verbosity "run_regression: New best rating $(a.rating):\n$(very_short_show(a))"
                 best_so_far = a
-                push!(all_discoveries, a)
                 if !isnothing(new_best_agent_hook)
                     @debug "run_regression: Running new_best_agent_hook"
                     new_best_agent_hook(a)
