@@ -10,7 +10,7 @@ end
 function make_grow_and_rate(rng, job::ExploreSimplifySearchJob)
     spec = job.spec
 
-    if isnothing(job.random_subset_count)
+    if isnothing(job.random_subset_count) || job.random_subset_count > length(y)
         X = job.X
         y = job.y
     else
