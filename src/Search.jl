@@ -163,7 +163,9 @@ function run_many_islands(
                 err,
                 catch_backtrace(),
             )
-            #rethrow()
+            if verbosity > 1
+                rethrow()
+            end
         end
     end
     finished_channel = Channel{Tuple{Population,ExploreSimplifySearchJob}}(100)
@@ -178,7 +180,9 @@ function run_many_islands(
                     err,
                     catch_backtrace(),
                 )
-                #rethrow()
+                if verbosity > 1
+                    rethrow()
+                end
             end
         end
     end
