@@ -1,6 +1,9 @@
 export regression_main, regression_main_detailed
 
-start_time = now()
+# This has to be initialized later.  I think it's getting
+# compiled in, so the start_time being reported is the time at
+# which the module was compiled.
+start_time::Union{Nothing,DateTime} = nothing
 
 function save_progress_file(progress_file, agent)
     @debug "save_progress_file: Writing" progress_file=progress_file agent=agent
@@ -92,6 +95,8 @@ function regression_main_detailed(
         @debug "regression_main: progress_file = $progress_file"
         agent -> save_progress_file(progress_file, agent)
     end
+
+    global start_time = now()
 
     (best_agent, genome_spec, all_discoveries) = run_regression(X, y, prespec;
                                                                 stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
