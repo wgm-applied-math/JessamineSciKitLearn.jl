@@ -170,10 +170,22 @@ function run_many_islands(
     end
     finished_channel = Channel{Tuple{Population,ExploreSimplifySearchJob}}(100)
 
+    # Provide a source of ID numbers
+    island_id_channel = Channel{Int64}(10)
+    Threads.@spawn begin
+        j = 1
+        while true
+            put!(island_id_channel, j)
+            j = j+1
+        end
+    end
+
     function launch_island(job)
         @debug "run_many_islands/launch_island: Launching island"
         Threads.@spawn begin
             try
+                island_id = take!(island_id_channel)
+                @debug_or_info verbosity "About to launch island" island_id=island_id
                 run_island(job, finished_channel; stop_deadline, stop_threshold, rng, verbosity)
             catch err
                 @error "run_many_islands: Exception during run_island" exception=(
@@ -238,5 +250,6 @@ function run_many_islands(
         @debug "run_many_islands: Island finished; launching another"
         launch_island(job)
     end
+
     return (condition, g_spec)
 end
