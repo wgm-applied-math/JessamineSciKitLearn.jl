@@ -103,7 +103,7 @@ function run_island(
             spec.simplification_spec.max_generations,
         )
 
-        @debug "run_island: Begin simplification stage"
+        @debug "run_island: Begin evolutionary simplification stage"
         pop_after_simplify = evolution_loop(
             rng,
             simplification_evolution_spec,
