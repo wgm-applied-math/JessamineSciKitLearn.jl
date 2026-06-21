@@ -52,11 +52,11 @@ function parse_search_spec(ps::AbstractDict, input_size::Int)
         genome_spec,
         exploration_spec,
         simplification_spec,
-        @cfield ps lambda_b 1.0e-10
+        @cfield ps lambda_b 1.0e-12
         ,
-        @cfield ps lambda_p 1.0e-10
+        @cfield ps lambda_p 1.0e-12
         ,
-        @cfield ps lambda_op 1.0e-10
+        @cfield ps lambda_op 1.0e-12
         ,
         @cfield ps num_islands 1
         ,
@@ -144,20 +144,19 @@ end
 
 function parse_mutation_spec(op_inventory, ps::AbstractDict = Dict())
     @debug "parse_mutation_spec: ps: $ps"
-    m_spec = MutationSpec(
-        ;
-        op_inventory,
+    m_spec = mutation_spec_auto_weight(
+        op_inventory;
         @cfield ps p_mutate_op 0.15
         ,
         @cfield ps p_mutate_index 0.15
         ,
-        @cfield ps p_duplicate_index 0.015
+        @cfield ps p_duplicate_index 0.03
         ,
-        @cfield ps p_delete_index 0.015
+        @cfield ps p_delete_index 0.03
         ,
-        @cfield ps p_duplicate_instruction 0.003
+        @cfield ps p_duplicate_instruction 0.015
         ,
-        @cfield ps p_delete_instruction 0.003
+        @cfield ps p_delete_instruction 0.015
         ,
         @cfield ps p_hop_instruction 0.015
     )
@@ -174,7 +173,7 @@ function parse_selection_spec(ps::AbstractDict = Dict())
         ,
         @cfield ps p_take_better 0.65
         ,
-        @cfield ps p_take_very_best 0.25
+        @cfield ps p_take_very_best 0.05
     )
 end
 
