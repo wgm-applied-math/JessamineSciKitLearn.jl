@@ -98,19 +98,20 @@ function regression_main_detailed(
 
     global start_time = now()
 
-    (best_agent, genome_spec, all_discoveries) = run_regression(X, y, prespec;
-                                                                stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
+    (best_agent, genome_spec, all_discoveries) = run_regression(
+        X, y, prespec;
+        stop_deadline, stop_threshold, new_best_agent_hook, verbosity)
     @debug_or_info verbosity "regression_main: Best:\n$(very_short_show(best_agent))"
 
     if !isnothing(best_agent)
         sym_res = model_basic_symbolic_output(genome_spec, best_agent)
         @debug_or_info verbosity "regression_main: Best (symbolic): $sym_res"
-        y_num_str = to_careful_string(sym_res.y_num)
+        y_num_str = careful_string(sym_res.y_num, PythonStyle())
         @debug_or_info verbosity "regression_main: Best (careful string): $y_num_str"
     end
     discoveries = map(all_discoveries) do agent
         sym_res = model_basic_symbolic_output(genome_spec, agent)
-        y_num_str = to_careful_string(sym_res.y_num)
+        y_num_str = careful_string(sym_res.y_num, PythonStyle())
         (y_num_str = y_num_str, agent = agent)
     end
     return (genome_spec = genome_spec, discoveries = discoveries)
