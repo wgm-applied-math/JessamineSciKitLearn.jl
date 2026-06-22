@@ -143,9 +143,12 @@ function split_symbols(s)
 end
 
 function parse_mutation_spec(op_inventory, ps::AbstractDict = Dict())
+    @cfield ps operation_weights Dict() AbstractDict
+    weight_scheme = parse_op_weight_scheme(operation_weights)
     @debug "parse_mutation_spec: ps: $ps"
     m_spec = mutation_spec_auto_weight(
-        op_inventory;
+        op_inventory,
+        weight_scheme;
         @cfield ps p_mutate_op 0.15
         ,
         @cfield ps p_mutate_index 0.15
@@ -174,6 +177,36 @@ function parse_selection_spec(ps::AbstractDict = Dict())
         @cfield ps p_take_better 0.65
         ,
         @cfield ps p_take_very_best 0.05
+    )
+end
+
+"""
+    parse_op_weight_scheme(ps)
+
+Parse a [`StandardWeightScheme`](@ref).
+"""
+function parse_op_weight_scheme(ps::AbstractDict = Dict())
+    StandardWeightScheme(
+        ;
+        @cfield ps identity 1.0
+        ,
+        @cfield ps additive 2.0
+        ,
+        @cfield ps multiplicative 4.0
+        ,
+        @cfield ps power 8.0
+        ,
+        @cfield ps exponential 12.0
+        ,
+        @cfield ps trigonometric 12.0
+        ,
+        @cfield ps extended_trig 12.0
+        ,
+        @cfield ps hyperbolic 16.0
+        ,
+        @cfield ps corner 6.0
+        ,
+        @cfield ps fuzzy_logic 4.0
     )
 end
 
