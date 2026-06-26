@@ -8,6 +8,7 @@ using Printf
 using Random
 
 using JSON
+using StatsBase
 using StructUtils
 using Symbolics
 using SymbolicUtils

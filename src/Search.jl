@@ -14,7 +14,8 @@ function make_grow_and_rate(rng, job::ExploreSimplifySearchJob)
         X = job.X
         y = job.y
     else
-        train_ixs = rand(rng, eachindex(job.y), job.random_subset_count)
+        train_ixs = StatsBase.sample(rng, eachindex(job.y), job.random_subset_count;
+                                     replace=false, ordered=true)
         X = job.X[train_ixs,:]
         y = job.y[train_ixs]
     end
