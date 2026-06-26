@@ -78,7 +78,3 @@ Use `convert` or `pyconvert` to convert `value` to `type`.
 function conf_convert(type, value)
     return convert(type, value)
 end
-
-function conf_convert(type, value::Py)
-    return pyconvert(type, value)
-end
