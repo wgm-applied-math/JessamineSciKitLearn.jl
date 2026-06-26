@@ -1,27 +1,12 @@
 module JessamineSciKitLearn
 
-using Accessors
-using Dates
-using Accessors
-using Distributions
-using Printf
-using Random
+using JessamineCLI
+using PythonCall
 
-using JSON
-using StatsBase
-using StructUtils
-using Symbolics
-using SymbolicUtils
-using TermInterface
+export regression_main
 
-using Jessamine
-using JessamineSymbolics
-
-include("CField.jl")
-include("Config.jl")
-include("Search.jl")
-include("Regression.jl")
-
-include("PythonElements.jl")
+function JessamineCLI.conf_convert(type, value::Py)
+    return pyconvert(type, value)
+end
 
 end

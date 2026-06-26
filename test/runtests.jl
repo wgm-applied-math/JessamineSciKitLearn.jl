@@ -3,6 +3,8 @@ using Random
 using Test
 using JessamineSciKitLearn
 
+include("Aqua.jl")
+
 Random.seed!(0x30c4070874d73da0)
 
 @testset "JessamineSciKitLearn.jl" begin
